@@ -10,6 +10,7 @@ IOSFRCDEMIN540       installed              French CDE Minimum Runtime Environme
 IOSFRX11540          installed              French Basic X Environment (French Support - Windowing Environment)
 """
 
+
 def _list():
     cmd = ['setld', '-i']
     out, err, ret = justcall(cmd)
@@ -34,8 +35,14 @@ def _list():
             pkg.append(x)
     return pkg, patch
 
+
 def listpkg():
+    """
+    Return a list of ips packages installed.
+    where pkg is (nodename, pkgname, version, arch)
+    """
     return _list()[0]
+
 
 def listpatch():
     return _list()[1]

@@ -1124,7 +1124,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The pushpkg action entrypoint.
         Inventories the installed packages.
         """
-        self.collector.call('push_pkg')
+        import utilities.packages.list as p
+        pkgs = p.listpkg()
+        n = len(pkgs)
+        if n == 0:
+            print("No package found. Skip push.")
+            return
+        else:
+            print("Pushing %d packages information." % n)
+        self.collector.call('push_pkg', pkgs)
 
     def pushpatch(self):
         """

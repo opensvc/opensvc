@@ -4,9 +4,14 @@ from utilities.proc import justcall, which
 
 
 def listpkg():
+    """
+    Return a list of ips packages installed.
+    where pkg is (nodename, pkgname, version, arch or "")
+    """
     lines = list_pkg_info()
     lines += list_pkg_query()
     return lines
+
 
 @cache("pkg_info")
 def list_pkg_info():
@@ -26,6 +31,7 @@ def list_pkg_info():
         lines.append(x)
     return lines
 
+
 @cache("pkg_query")
 def list_pkg_query():
     if which('pkg') is None:
@@ -40,6 +46,7 @@ def list_pkg_query():
         x = [Env.nodename] + l
         lines.append(x)
     return lines
+
 
 def listpatch():
     return []
