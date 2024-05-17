@@ -1132,7 +1132,31 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             return
         else:
             print("Pushing %d packages information." % n)
-        self.collector.call('push_pkg', pkgs)
+
+        if self.oc3_version() >= Semver(1, 0, 1):
+            from utilities.rfc3339 import RFC3339
+
+            rfc3339 = RFC3339()
+
+            def to_pkg_dict(l):
+                # l = (nodename, pkgname, version, arch, [type, [installed_at, [sig]]])
+                #
+                pkg = {"name": l[1], "version": l[2], "arch": l[3],
+                       "type": "", "sig": "", "installed_at": None}
+                n_fields = len(l)
+                if n_fields >= 5:
+                    pkg["type"] = l[4]
+                if n_fields >= 6:
+                    pkg["installed_at"] = rfc3339.from_epoch(l[5]) if l[5] is not None else None
+                if n_fields >= 7:
+                    pkg["sig"] = l[6]
+                return pkg
+            body = {"packages": [to_pkg_dict(l) for l in pkgs]}
+            resp, data = self.collector_oc3_request("POST", "/oc3/daemon/system/package", data=body)
+            if resp.code != 202:
+                raise ex.Error("POST /oc3/daemon/system/package unexpected status code: %d" % resp.code)
+        else:
+            self.collector.call('push_pkg', pkgs)
 
     def pushpatch(self):
         """
