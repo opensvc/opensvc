@@ -1,4 +1,3 @@
-import datetime
 import os
 from collections import namedtuple
 from stat import *
@@ -9,8 +8,8 @@ from utilities.proc import justcall, which
 
 def listpkg_dummy():
     print("pushpkg not supported on this system")
-    cmd = ['true']
     return []
+
 
 def listpkg_snap():
     """
@@ -38,9 +37,9 @@ def listpkg_snap():
             "%s rev %s" % (_data.Version, _data.Rev),
             "",
             "snap",
-            "",
         ])
     return lines
+
 
 def listpkg_rpm():
     if not which("rpm"):
@@ -48,6 +47,7 @@ def listpkg_rpm():
     cmd = ['rpm', '-qai', '--queryformat=XX%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
     out, err, ret = justcall(cmd)
     lines = []
+    sig = ""
     for line in out.split('\n'):
         if line.startswith('Signature'):
             sig = line.split()[-1].strip()
@@ -59,18 +59,20 @@ def listpkg_rpm():
         if len(l) < 5:
             continue
         try:
-            l[4] = datetime.datetime.fromtimestamp(int(l[4])).strftime("%Y-%m-%d %H:%M:%S")
+            l[4] = int(l[4])
         except:
-            l[4] = ""
+            l[4] = None
         x = [Env.nodename] + l + [sig]
         lines.append(x)
+        sig = ""
     return lines
+
 
 def listpkg_deb():
     if not which("dpkg"):
         return []
     cmd = ['dpkg', '-l']
-    out, err,ret = justcall(cmd)
+    out, err, ret = justcall(cmd)
     lines = []
     arch = ""
     for line in out.splitlines():
@@ -82,18 +84,23 @@ def listpkg_deb():
         x = [Env.nodename] + l[1:3] + [arch, "deb"]
         try:
             t = os.stat("/var/lib/dpkg/info/"+l[1]+".list")[ST_MTIME]
-            t = datetime.datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
         except:
-            t = ""
+            t = None
         x.append(t)
         lines.append(x)
     return lines
 
+
 def listpkg():
+    """
+    returns [pkg, ...] where pkg is (nodename, pkgname, version, arch, [type, [installed_at, [sig]]])
+    where installed_at is epoch timestamp or None when unknown
+    """
     data = listpkg_deb()
     data += listpkg_rpm()
     data += listpkg_snap()
     return data
+
 
 def listpatch():
     return []
