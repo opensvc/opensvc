@@ -1151,10 +1151,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 if n_fields >= 7:
                     pkg["sig"] = l[6]
                 return pkg
-            body = {"packages": [to_pkg_dict(l) for l in pkgs]}
-            resp, data = self.collector_oc3_request("POST", "/oc3/daemon/system/package", data=body)
+            body = {"package": [to_pkg_dict(l) for l in pkgs]}
+            resp, data = self.collector_oc3_request("POST", "/oc3/feed/system", data=body)
             if resp.code != 202:
-                raise ex.Error("POST /oc3/daemon/system/package unexpected status code: %d" % resp.code)
+                raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % resp.code)
         else:
             self.collector.call('push_pkg', pkgs)
 
@@ -1178,10 +1178,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.print_data(system_dict)
         finally:
             try:
-                if self.oc3_version() >= Semver(1, 0, 0):
-                    resp, data = self.collector_oc3_request("POST", "/oc3/daemon/system", data=system_dict)
-                    if resp.code != 204:
-                        raise ex.Error("POST /oc3/daemon/system unexpected status code: %d" % resp.code)
+                if self.oc3_version() >= Semver(1, 0, 1):
+                    resp, data = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
+                    if resp.code != 202:
+                        raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % resp.code)
                 else:
                     asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
                     self.collector.call('push_asset', self, asset_dict)
