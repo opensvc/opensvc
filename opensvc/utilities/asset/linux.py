@@ -755,7 +755,7 @@ class Asset(BaseAsset):
         last = last.replace(microsecond=0)
         return {
             "title": "last boot",
-            "value": last,
+            "value": last.strftime("%Y-%m-%d %H:%M:%S"),
             "source": self.s_probe
         }
 
