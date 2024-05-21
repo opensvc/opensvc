@@ -1178,7 +1178,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.print_data(system_dict)
         finally:
             try:
-                if self.oc3_version() >= Semver(1, 0, 1):
+                if self.oc3_version() >= Semver(1, 0, 2):
+                    from utilities.rfc3339 import RFC3339
+
+                    if hasattr(system_dict.get("properties", {}), "last_boot"):
+                        last_boot = system_dict["properties"]["last_boot"]["value"]
+                        system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
                     resp, data = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
                     if resp.code != 202:
                         raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % resp.code)

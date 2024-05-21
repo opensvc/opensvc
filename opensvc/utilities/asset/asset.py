@@ -630,7 +630,6 @@ class BaseAsset(object):
 
     def get_last_boot(self):
         last = os.path.getmtime("/proc/1")
-        last = datetime.datetime.fromtimestamp(last).strftime("%Y-%m-%d %H:%M:%S")
         return {
             "title": "last boot",
             "value": last,
