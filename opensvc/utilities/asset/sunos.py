@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -288,6 +289,24 @@ class Asset(BaseAsset):
             return self.get_boot_id_zone()
         else:
             return super(Asset, self).get_boot_id()
+
+    def get_last_boot(self):
+        if self.zone:
+            return self.get_last_boot_zone()
+        else:
+            return super(Asset, self).get_last_boot()
+
+    def get_last_boot_zone(self):
+        pid = self.zsched_pid()
+        if pid is None:
+            return
+        last = os.path.getmtime("/proc/%s" % pid)
+        last = datetime.datetime.fromtimestamp(last).strftime("%Y-%m-%d %H:%M:%S")
+        return {
+            "title": "last boot",
+            "value": last,
+            "source": self.s_probe
+        }
 
 if __name__ == "__main__":
     print(Asset()._get_cpu_model())
