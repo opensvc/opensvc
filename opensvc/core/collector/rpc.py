@@ -793,7 +793,10 @@ class CollectorRpc(object):
             _vars.append(key)
             if _d["value"] is None:
                 _d["value"] = ""
-            _vals.append(_d["value"])
+            if key == "last_boot":
+                _vals.append(from_epoch(_d["value"]))
+            else:
+                _vals.append(_d["value"])
         args = [_vars, _vals]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         if node.options.syncrpc:
