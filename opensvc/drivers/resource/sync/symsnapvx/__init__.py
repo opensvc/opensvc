@@ -40,7 +40,7 @@ KEYWORDS = [
     },
     {
         "keyword": "absolute",
-        "text": "Use :opt:`-delta` in symsnapvx commands.",
+        "text": "Use :opt:`-absolute` in symsnapvx commands.",
         "at": True,
     },
     {
@@ -231,9 +231,9 @@ class SyncSymsnapvx(Sync):
         if self.delta and self.absolute:
             raise ex.Error("set delta or absolute, not both")
         if self.delta:
-            cmd += ["-delta", self.delta]
+            cmd += ["-delta", str(self.delta)]
         if self.absolute:
-            cmd += ["-absolute", self.absolute]
+            cmd += ["-absolute", str(self.absolute)]
         cmd += ["-name", self.format_name()]
         cmd += ["-devs", ",".join(self.merged_devs)]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
