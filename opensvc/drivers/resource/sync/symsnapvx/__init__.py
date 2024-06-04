@@ -159,7 +159,7 @@ class SyncSymsnapvx(Sync):
     def list(self):
         if not self.devs:
             raise ex.Error("devs is mandatory")
-        cmd = self.vx_cmd() + ["list", ",".join(self.devs)]
+        cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.devs)]
         out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.Error("vx_list: %s" % err)
