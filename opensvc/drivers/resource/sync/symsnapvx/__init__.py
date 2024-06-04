@@ -169,15 +169,17 @@ class SyncSymsnapvx(Sync):
         return parse_vx_list(out)
 
     def establish(self):
-        cmd = self.vx_cmd() + ["establish"]
+        cmd = self.vx_cmd() + ["establish", "-noprompt"]
         if self.secure:
             cmd += ["-secure"]
+        elif self.delta or self.absolute:
+            cmd += ["-ttl"]
         if self.delta and self.absolute:
             raise ex.Error("set delta or absolute, not both")
         if self.delta:
-            cmd += ["-ttl", "-delta", self.delta]
+            cmd += ["-delta", self.delta]
         if self.absolute:
-            cmd += ["-ttl", "-absolute", self.absolute]
+            cmd += ["-absolute", self.absolute]
         cmd += ["-name", self.format_name()]
         cmd += ["-devs", ",".join(self.devs)]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
