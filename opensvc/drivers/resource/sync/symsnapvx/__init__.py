@@ -162,7 +162,7 @@ class SyncSymsnapvx(Sync):
     def list(self):
         if not self.devs:
             raise ex.Error("devs is mandatory")
-        cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.devs)]
+        cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.devs), "-output", "xml_e"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "No snapshot" in err:
@@ -216,9 +216,9 @@ class SyncSymsnapvx(Sync):
 
     def snap_errors(self, snaps):
         for snap in snaps:
-            err = d.get("error_reason")
+            err = snap.get("error_reason")
             if err != "NA":
-                source = d.get("source")
+                source = snap.get("source")
                 self.status_log("%s: %s", source, err)
 
     def _status(self, verbose=False):
