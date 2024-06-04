@@ -230,7 +230,11 @@ class SyncSymsnapvx(Sync):
         last = self.last(snaps)
         if last is None:
             return core.status.DOWN
-        self.status_log("Last sync on %s" % self.last, "info")
+        delay = datetime.timedelta(seconds=self.sync_max_delay)
+        if last < datetime.datetime.now() - delay:
+            self.status_log("Last sync too old: %s (<%s)" % (last, delay), "warn")
+            return core.status.WARN
+        self.status_log("Last sync on %s" % last, "info")
         return core.status.UP
 
     @notify
