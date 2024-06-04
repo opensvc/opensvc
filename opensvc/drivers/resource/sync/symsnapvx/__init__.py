@@ -1,3 +1,4 @@
+import core.status
 import core.exceptions as ex
 
 from .. import Sync, notify
@@ -162,6 +163,8 @@ class SyncSymsnapvx(Sync):
         cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.devs)]
         out, err, ret = justcall(cmd)
         if ret != 0:
+            if "No snapshot" in err:
+                return []
             raise ex.Error("vx_list: %s" % err)
         return parse_vx_list(out)
 
