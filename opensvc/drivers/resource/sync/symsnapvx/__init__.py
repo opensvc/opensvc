@@ -179,6 +179,7 @@ class SyncSymsnapvx(Sync):
         if self.absolute:
             cmd += ["-ttl", "-absolute", self.absolute]
         cmd += ["-name", self.format_name()]
+        cmd += ["-devs", ",".join(self.devs)]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.Error(err)
