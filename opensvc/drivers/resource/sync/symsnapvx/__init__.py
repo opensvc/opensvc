@@ -251,7 +251,7 @@ class SyncSymsnapvx(Sync):
     def can_sync(self, target=None):
         try:
             self.check_requires("sync_update")
-        except ex.Error as e:
+        except (ex.Error, ex.ContinueAction) as e:
             self.log.debug(e)
             return False
         return True
