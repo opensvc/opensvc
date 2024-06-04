@@ -1,5 +1,6 @@
 from .. import Sync, notify
 from core.objects.svcdict import KEYS
+from utilities.proc import justcall
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symsnapvx"
@@ -157,7 +158,7 @@ class SyncSymsnapvx(Sync):
         if not self.devs:
             raise ex.Error("devs is mandatory")
         cmd = self.vx_cmd() + ["list", ",".join(self.devs)]
-        out, err, ret = self.justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret != 0:
             raise ex.Error("vx_list: %s" % err)
         return parse_vx_list(out)
