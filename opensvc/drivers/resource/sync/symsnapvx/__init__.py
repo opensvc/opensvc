@@ -7,7 +7,8 @@ KEYWORDS = [
     {
         "keyword": "symid",
         "required": True,
-        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by :kw:`pairs`."
+        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by :kw:`pairs`.",
+        "at": True,
     },
     {
         "keyword": "devs",
@@ -22,18 +23,22 @@ KEYWORDS = [
         "default": True,
         "convert": "boolean",
         "text": "Use :opt:`-secure` in symsnapvx commands.",
+        "at": True,
     },
     {
         "keyword": "absolute",
         "text": "Use :opt:`-delta` in symsnapvx commands.",
+        "at": True,
     },
     {
         "keyword": "delta",
         "text": "Use :opt:`-delta` in symsnapvx commands.",
+        "at": True,
     },
     {
         "keyword": "name",
         "text": "Use :opt:`-name` in symsnapvx commands.",
+        "at": True,
     },
 ]
 
