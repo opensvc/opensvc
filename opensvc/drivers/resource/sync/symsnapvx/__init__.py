@@ -154,7 +154,7 @@ class SyncSymsnapvx(Sync):
         return ["/usr/symcli/bin/symsnapvx", "-sid", self.symid]
 
     def list(self):
-        if not devs:
+        if not self.devs:
             raise ex.Error("devs is mandatory")
         cmd = self.vx_cmd() + ["list", ",".join(self.devs)]
         out, err, ret = self.justcall(cmd)
