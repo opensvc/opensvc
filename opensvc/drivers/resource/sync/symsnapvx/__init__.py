@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ElementTree
 from .. import Sync, notify
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
+from utilities.lazy import lazy
 
 DRIVER_GROUP = "sync"
 DRIVER_BASENAME = "symsnapvx"
@@ -19,10 +20,16 @@ KEYWORDS = [
     {
         "keyword": "devs",
         "convert": "list",
-        "required": True,
         "at": True,
         "text": "Whitespace-separated list of devices ``<src>`` devid to drive with this resource. The destination devices are only needed when the snapshot needs presenting.",
         "example": "00B60 00B63",
+    },
+    {
+        "keyword": "devs_from",
+        "convert": "list",
+        "at": True,
+        "text": "Whitespace-separared list of resource identifiers. The list of symmetrix device identifiers is looked up from the sub devices of the resources referenced here.",
+        "example": "disk#0 disk#1",
     },
     {
         "keyword": "secure",
@@ -111,11 +118,44 @@ def parse_last(s):
     except AttributeError:
         return
 
+def devid_of(devpath):
+    cmd = ["syminq", "-pdevfile", devpath, "-output", "xml_e"]
+    out, err, ret = justcall(cmd)
+    if ret != 0:
+        raise ex.Error(err)
+    l = parse_syminq(out)
+    return l[0]["dev_name"]
+
+"""
+    <?xml version="1.0" standalone="yes" ?>
+    <SymCLI_ML>
+      <Inquiry>
+        <Device>
+          <symid>000297600016</symid>
+          <pd_name>/dev/rdsk/c0t60000970000297600016533030334233d0s2</pd_name>
+          <dev_name>003B3</dev_name>
+          <director>1D</director>
+          <port>8</port>
+        </Device>
+      </Inquiry>
+    </SymCLI_ML>
+"""
+def parse_syminq(s):
+    l = []
+    etree = ElementTree.fromstring(s)
+    for e in etree.findall("Inquiry/Device"):
+        d = {}
+        for sub in e.iter():
+            d[sub.tag] = sub.text
+        l.append(d)
+    return l
+
 class SyncSymsnapvx(Sync):
     def __init__(self,
                  type="sync.symsnapvx",
                  symid=None,
                  devs=None,
+                 devs_from=None,
                  secure=None,
                  absolute=None,
                  delta=None,
@@ -125,6 +165,7 @@ class SyncSymsnapvx(Sync):
 
         self.symid = symid
         self.devs = devs or []
+        self.devs_from = devs_from or []
         self.secure = secure or False
         self.absolute = absolute
         self.delta = delta
@@ -156,18 +197,29 @@ class SyncSymsnapvx(Sync):
         ]
         return data
 
+
+    @lazy
+    def merged_devs(self):
+        l = self.devs
+        for res in self.svc.get_resources():
+            if res.rid in self.devs_from:
+                for devpath in res.sub_devs():
+                    l.append(devid_of(devpath))
+        return sorted(list(set(l)))
+
     def vx_cmd(self):
         return ["/usr/symcli/bin/symsnapvx", "-sid", self.symid]
 
     def list(self):
-        if not self.devs:
-            raise ex.Error("devs is mandatory")
-        cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.devs), "-output", "xml_e"]
+        if not self.merged_devs:
+            raise ex.Error("no devices")
+        cmd = self.vx_cmd() + ["list", "-devs", ",".join(self.merged_devs), "-output", "xml_e"]
         out, err, ret = justcall(cmd)
         if ret != 0:
             if "No snapshot" in err:
                 return []
-            raise ex.Error("vx_list: %s" % err)
+            if err:
+                raise ex.Error("vx_list: %s" % err)
         return parse_vx_list(out)
 
     def establish(self):
@@ -183,7 +235,7 @@ class SyncSymsnapvx(Sync):
         if self.absolute:
             cmd += ["-absolute", self.absolute]
         cmd += ["-name", self.format_name()]
-        cmd += ["-devs", ",".join(self.devs)]
+        cmd += ["-devs", ",".join(self.merged_devs)]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         if ret != 0:
             raise ex.Error(err)
