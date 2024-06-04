@@ -218,6 +218,9 @@ class SyncSymsnapvx(Sync):
 
     def _status(self, verbose=False):
         snaps = self.list()
+        if len(snaps) == 0:
+            self.status_log("no snapshot yet", "info")
+            return core.status.DOWN
         self.snap_errors(snaps)
         last = self.last(snaps)
         if last is None:
