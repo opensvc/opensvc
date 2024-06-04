@@ -1,3 +1,5 @@
+import core.exceptions as ex
+
 from .. import Sync, notify
 from core.objects.svcdict import KEYS
 from utilities.proc import justcall
