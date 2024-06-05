@@ -180,10 +180,11 @@ class SyncSymsnapvx(Sync):
             self.label = self.label[:76] + "..."
 
     def __str__(self):
-        return "%s symid=%s devs=%s" % (
-            super(SyncSymclone, self).__str__(),
+        return "%s symid=%s devs=%s devs_from=%s" % (
+            super(SyncSymsnapvx, self).__str__(),
             self.symid,
-            str(self.devs)
+            str(self.devs),
+            str(self.devs_from),
         )
 
     def _info(self):
@@ -271,7 +272,7 @@ class SyncSymsnapvx(Sync):
             err = snap.get("error_reason")
             if err != "NA":
                 source = snap.get("source")
-                self.status_log("%s: %s", source, err)
+                self.status_log("%s: %s" % (source, err))
 
     def _status(self, verbose=False):
         snaps = self.list()
