@@ -196,8 +196,13 @@ class SyncSymsnapvx(Sync):
           ["name", str(self.name)],
           ["symid", str(self.symid)],
         ]
+        snap = self.get_snap()
+        if snap:
+            data += [
+              ["num_generations", snap.get("num_generations", "0")],
+              ["last_timestamp", snap.get("last_timestamp", "")],
+            ]
         return data
-
 
     @lazy
     def merged_devs(self):
@@ -222,6 +227,13 @@ class SyncSymsnapvx(Sync):
             if err:
                 raise ex.Error("vx_list: %s" % err)
         return parse_vx_list(out)
+
+    def get_snap(self):
+        snaps = self.list()
+        name = self.format_name()
+        for snap in snaps:
+            if snap["snapshot_name"] == name:
+                return snap
 
     def establish(self):
         cmd = self.vx_cmd() + ["establish", "-noprompt"]
@@ -257,37 +269,27 @@ class SyncSymsnapvx(Sync):
             return False
         return True
 
-    def last(self, snaps):
-        oldest = None
-        for snap in snaps:
-            last = snap["last"]
-            if last is None:
-                continue
-            if oldest is None or last > oldest:
-                oldest = last
-        return oldest
-
-    def snap_errors(self, snaps):
-        for snap in snaps:
-            err = snap.get("error_reason")
-            if err != "NA":
-                source = snap.get("source")
-                self.status_log("%s: %s" % (source, err))
+    def snap_error(self, snap):
+        err = snap.get("error_reason")
+        if err != "NA":
+            source = snap.get("source")
+            self.status_log("%s: %s" % (source, err))
 
     def _status(self, verbose=False):
-        snaps = self.list()
-        if len(snaps) == 0:
+        snap = self.get_snap()
+        if not snap:
             self.status_log("no snapshot yet", "info")
             return core.status.DOWN
-        self.snap_errors(snaps)
-        last = self.last(snaps)
+        self.snap_error(snap)
+        gens = snap.get("num_generations", "0")
+        last = snap.get("last")
         if last is None:
             return core.status.DOWN
         delay = datetime.timedelta(seconds=self.sync_max_delay)
+        self.status_log("last snapshot on %s, %s generations" % (last, gens), "info")
         if last < datetime.datetime.now() - delay:
-            self.status_log("Last sync too old: %s (<%s)" % (last, delay), "warn")
+            self.status_log("last snapshot too old (<%s)" % delay, "warn")
             return core.status.WARN
-        self.status_log("Last sync on %s" % last, "info")
         return core.status.UP
 
     @notify
