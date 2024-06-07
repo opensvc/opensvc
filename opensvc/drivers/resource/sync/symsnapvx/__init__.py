@@ -14,7 +14,7 @@ KEYWORDS = [
     {
         "keyword": "symid",
         "required": True,
-        "text": "Identifier of the symmetrix array hosting the source and target devices pairs pointed by :kw:`pairs`.",
+        "text": "Identifier of the symmetrix array hosting the devices pointed by :kw:`devs` and `devs_from`.",
         "at": True,
     },
     {
