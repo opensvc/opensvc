@@ -3466,13 +3466,13 @@ class Svc(PgMixin, BaseSvc):
           'unprovision', 'provision',
           'stop', 'start',
         ]
-        if resource.type == "sync":
+        if resource.driver_group == "sync":
             actions += [
                 'sync_nodes', 'sync_drp',
                 'sync_resync', 'sync_break',
                 'sync_update',
             ]
-        if resource.type in ("task.host", "task.docker", "task.podman"):
+        if resource.driver_group == "task":
             actions += [
                 'run',
             ]
