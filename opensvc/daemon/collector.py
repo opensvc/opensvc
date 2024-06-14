@@ -16,6 +16,7 @@ from utilities.semver import Semver
 MAX_QUEUED = 1000
 RESCAN_OC3_VERSION_INTERVAL = 24 * 60 * 60
 
+
 class Collector(shared.OsvcThread):
     name = "collector"
 
@@ -258,8 +259,13 @@ class Collector(shared.OsvcThread):
         try:
             if self.oc3_version >= Semver(1, 0, 1):
                 begin = time.time()
-                shared.NODE.collector_oc3_request("POST", "/oc3/feed/daemon/status", data=data, headers={"XDaemonChange":  " ".join(list(self.last_status_changed))})
-                self.log.debug("dbg collector post /oc3/feed/daemon/status %0.3f", time.time()-begin)
+                oc3_path = "/oc3/feed/daemon/status"
+                headers = {"XDaemonChange": " ".join(list(self.last_status_changed))}
+                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                if status_code != 202:
+                    self.log.error("dbg collector POST %s unexpected status code %d %0.3f", status_code, oc3_path, time.time() - begin)
+                else:
+                    self.log.debug("dbg collector POST %s status code %d %0.3f", status_code, oc3_path, time.time() - begin)
             else:
                 shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
@@ -274,13 +280,16 @@ class Collector(shared.OsvcThread):
         try:
             if self.oc3_version >= Semver(1, 0, 1):
                 begin = time.time()
-                code, _ = shared.NODE.collector_oc3_request("POST", "/oc3/feed/daemon/ping")
-                self.log.debug("post /oc3/feed/daemon/ping %0.3f", time.time()-begin)
-                if code == 202:
+                oc3_path = "/oc3/feed/daemon/ping"
+                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path)
+                self.log.debug("POST %s %0.3f", status_code,time.time() - begin)
+                if status_code == 202:
                     pass
-                elif code == 204:
+                elif status_code == 204:
                     self.log.debug("ping rejected, collector ask for resync")
                     self.send_daemon_status(data)
+                else:
+                    self.log.warning("POST %s unexpected status code %d completed in %0.3f", oc3_path, status_code,time.time() - begin)
             else:
                 result = shared.NODE.collector.call("daemon_ping")
                 if result and result.get("info") == "resync":
@@ -388,19 +397,19 @@ class Collector(shared.OsvcThread):
         null_version = Semver(0, 0, 0)
         version = shared.NODE.oc3_version()
         try:
-            resp, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
-            if resp.code == 200:
+            status_code, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
+            if status_code == 200:
                 if isinstance(schema, dict):
                     s = schema.get("version", "0.0.0")
                     version = Semver.parse(s)
-            elif resp.code in [404]:
+            elif status_code in [404]:
                 if version != Semver():
                     # collector has no anymore oc3 configured, reset to null
                     self.log.warning("oc3 version skip cache (GET /oc3/version http status code %d)", resp.code)
                 version = null_version
             else:
                 # 502 Bad Gateway, 503 Service Unavailable: oc3 is not yet ready
-                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)",resp.code)
+                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)", resp.code)
         except Exception as err:
             if version > null_version:
                 self.log.warning("oc3 version preserve cache (GET /oc3/version error: %s)", str(err))
