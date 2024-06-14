@@ -231,15 +231,37 @@ class Collector(shared.OsvcThread):
         if self.stopped():
             return
 
-        with shared.SERVICES_LOCK:
-            if path not in shared.SERVICES:
-                return
-            svc = shared.SERVICES[path].send_service_config_args()
+        if self.oc3_version >= Semver(1, 0, 3):
+            with shared.SERVICES_LOCK:
+                if path not in shared.SERVICES:
+                    return
+                try:
+                    data = shared.SERVICES[path].oc3_object_config_body()
+                except Exception as err:
+                    self.log.info("skip send service %s config: %s",path, str(err))
+                    return
+        else:
+            with shared.SERVICES_LOCK:
+                if path not in shared.SERVICES:
+                    return
+                data = shared.SERVICES[path].send_service_config_args()
 
-        self.log.info("send service %s config", path)
+        sent = False
         try:
-            shared.NODE.collector.call("push_config", svc)
-            sent = True
+            if self.oc3_version >= Semver(1, 0, 3):
+                begin = time.time()
+                oc3_path = "/oc3/feed/object/config"
+                headers = {"Accept": "application/json", "Content-Type": "application/json"}
+                self.log.info("POST %s object config %s", oc3_path, path)
+                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                if status_code != 202:
+                    self.log.warning("POST %s unexpected status code %d for object %s completed in %0.3f", oc3_path, status_code, path,     time.time() - begin)
+                else:
+                    sent = True
+            else:
+                self.log.info("send service %s config", path)
+                shared.NODE.collector.call("push_config", data)
+                sent = True
         except Exception as exc:
             self.log.error("call push_config %s: %s", path, exc)
             shared.NODE.collector.disable()
