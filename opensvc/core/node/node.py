@@ -1152,9 +1152,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pkg["sig"] = l[6]
                 return pkg
             body = {"package": [to_pkg_dict(l) for l in pkgs]}
-            resp, data = self.collector_oc3_request("POST", "/oc3/feed/system", data=body)
-            if resp.code != 202:
-                raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % resp.code)
+            status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=body)
+            if status_code != 202:
+                raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
         else:
             self.collector.call('push_pkg', pkgs)
 
@@ -1184,9 +1184,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     if hasattr(system_dict.get("properties", {}), "last_boot"):
                         last_boot = system_dict["properties"]["last_boot"]["value"]
                         system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
-                    resp, data = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
-                    if resp.code != 202:
-                        raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % resp.code)
+                    status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
+                    if status_code != 202:
+                        raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
                 else:
                     asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
                     self.collector.call('push_asset', self, asset_dict)
@@ -2916,7 +2916,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, **kwargs):
         """
-        Make a request to the collector's oc3 api
+        Make a request to the collector's oc3 api and returns status code and json decoded response
+
+        it will raise if it can't decode http response, or can't get http status code
+
+        Returns:
+            tuple[status_code, data]: A tuple containing the http status code of
+            the response and the json decoded data.
         """
         if base_url is None:
             url = self.collector_url(rpath)
@@ -2942,18 +2948,26 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
+
+        def returns(ret_code, read_closer):
+            if ret_code == 204:
+                return ret_code, None
+            try:
+                ret_data = json.loads(read_closer.read().decode("utf-8"))
+                return ret_code, ret_data
+            except Exception as decode_err:
+                raise ex.Error("oc3 %s %s status code %d can't decode response: %s" %
+                           (method, url, ret_code, str(decode_err)))
+            finally:
+                read_closer.close()
+
         try:
             resp = urlopen(request, **kwargs)
+            return returns(resp.code, resp)
         except HTTPError as err:
-            return err, None
+            return returns(err.code, err)
         except Exception as err:
             raise ex.Error("oc3 %s %s error: %s" % (method, url, str(err)))
-        if resp.code == 204:
-            resp.close()
-            return resp, None
-        data = json.loads(resp.read().decode("utf-8"))
-        resp.close()
-        return resp, data
 
     def svc_conf_from_templ(self, name, namespace, kind, template):
         """
