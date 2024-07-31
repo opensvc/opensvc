@@ -1,6 +1,4 @@
-import importlib
-from env import Env
+from uuid import uuid4
 
-_package = __package__ or __spec__.name # pylint: disable=undefined-variable
-_os = importlib.import_module("." + Env.module_sysname, package=_package)
-hostid = _os.hostid
+def hostid():
+    return uuid4().bytes[:8].hex()
