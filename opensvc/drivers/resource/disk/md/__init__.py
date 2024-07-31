@@ -238,6 +238,11 @@ class DiskMd(BaseDisk):
         else:
             return "/dev/md/"+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
 
+    def posix_devpath(self):
+        # mdadm starts refusing "/dev/by-id/md-uuid-*" names as non-POSIX circa v4.3 (ubuntu 2404)
+        d = self.devpath()
+        return os.path.realpath(d)
+
     def devpath(self):
         return "/dev/disk/by-id/md-uuid-"+str(self.uuid)
 
@@ -480,7 +485,7 @@ class DiskMd(BaseDisk):
         if not self.is_up():
             self.log.info("skip: non-up md")
             return
-        devpath = self.devpath()
+        devpath = self.posix_devpath()
         for line in buff.split("\n"):
             line = line.strip()
             if "faulty" in line:
