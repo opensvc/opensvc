@@ -6,6 +6,7 @@ a service is frozen.
 import os
 from env import Env
 from utilities.naming import split_path
+from utilities.files import unlink_and_sync
 
 
 class Freezer(object):
@@ -44,14 +45,16 @@ class Freezer(object):
         flag_d = os.path.dirname(self.flag)
         if not os.path.exists(flag_d):
             os.makedirs(flag_d, 0o0755)
-        open(self.flag, 'w').close()
+        fd = open(self.flag, 'w')
+        os.fsync(fd)
+        fd.close()
 
     def thaw(self):
         """
         Remove the service frozen file flag.
         """
         if self.flag != self.node_flag and os.path.exists(self.flag):
-            os.unlink(self.flag)
+            unlink_and_sync(self.flag)
 
     def node_frozen(self):
         """
@@ -74,7 +77,9 @@ class Freezer(object):
         flag_d = os.path.dirname(self.node_flag)
         if not os.path.exists(flag_d):
             os.makedirs(flag_d, 0o0755)
-        open(self.node_flag, 'w').close()
+        fd = open(self.node_flag, 'w')
+        os.fsync(fd)
+        fd.close()
 
     def node_thaw(self):
         """
@@ -82,7 +87,7 @@ class Freezer(object):
         """
         if not os.path.exists(self.node_flag):
             return
-        os.unlink(self.node_flag)
+        unlink_and_sync(self.node_flag)
 
     def __init__(self, name):
         self.node_flag = os.path.join(Env.paths.pathvar, "node", "frozen")
