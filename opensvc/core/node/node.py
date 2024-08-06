@@ -1719,7 +1719,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                                " hex digits max (ex: 0x90520a45138e85)")
             return hostid
         self.log.info("can't find a prkey forced in node.conf. generate one.")
-        hostid = "0x"+self.hostid()
+        hostid = self.new_prkey()
         self.set_multi(["node.prkey="+hostid])
         return hostid
 
@@ -1730,12 +1730,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         print(self.get_prkey())
 
     @staticmethod
-    def hostid():
-        """
-        Return a stable host unique id
-        """
-        from utilities.hostid import hostid
-        return hostid()
+    def new_prkey():
+        from uuid import uuid4
+        return "0x"+uuid4().bytes[:8].hex()
 
     def checks(self):
         """
