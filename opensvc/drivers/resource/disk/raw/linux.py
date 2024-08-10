@@ -60,7 +60,7 @@ class DiskRaw(BaseDiskRaw):
         Cached to execute only once per run. The result is of no interest.
         """
         cmd = ["raw", "-qa"]
-        err, ret, out = justcall(cmd)
+        out, err, ret = justcall(cmd)
         if ret == 0:
             # no need to load (already loaded or compiled-in)
             return
