@@ -9,7 +9,7 @@ from env import Env
 from utilities.cache import cache
 from utilities.lazy import lazy
 from core.objects.svcdict import KEYS
-from utilities.proc import justcall
+from utilities.proc import justcall, which
 from utilities.devices.linux import loop_to_file
 
 DRIVER_GROUP = "disk"
@@ -23,6 +23,13 @@ KEYS.register_driver(
     keywords=KEYWORDS,
 )
 
+def driver_capabilities(node=None):
+    data = ["disk.raw"]
+    cmd = ['modinfo', 'raw']
+    out, err, ret = justcall(cmd)
+    if ret == 0 and which("raw"):
+        data.append("disk.raw.cdev")
+    return data
 
 class DiskRaw(BaseDiskRaw):
     def __init__(self, **kwargs):
@@ -59,6 +66,8 @@ class DiskRaw(BaseDiskRaw):
         Load the raw driver if necessary.
         Cached to execute only once per run. The result is of no interest.
         """
+        if not self.has_capability("disk.raw.cdev"):
+            return
         cmd = ["raw", "-qa"]
         out, err, ret = justcall(cmd)
         if ret == 0:
@@ -78,6 +87,8 @@ class DiskRaw(BaseDiskRaw):
 
     @cache("raw.list")
     def get_raws(self):
+        if not self.has_capability("disk.raw.cdev"):
+            return {}
         self.modprobe()
         raws = {}
         sysfs_raw_path = os.path.join(os.sep, 'sys', 'class', 'raw')
