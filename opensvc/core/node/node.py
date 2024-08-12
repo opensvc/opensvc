@@ -1731,8 +1731,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
     @staticmethod
     def new_prkey():
+        """
+        Create new pr key with a non zero heading hex to avoid comparaison
+        errors caused by padding stripping.
+        """
         from uuid import uuid4
-        return "0x"+uuid4().bytes[:8].hex()
+        while True:
+            v = uuid4().bytes[:8].hex()
+            if not v.startswith("0"):
+                return "0x"+v
+
 
     def checks(self):
         """
