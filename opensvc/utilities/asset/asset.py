@@ -771,9 +771,9 @@ class BaseAsset(object):
     def system_dict_to_asset_dict(cls, system_dict):
         system_dict = system_dict or {}
         data = {}
-        for k, v in system_dict.get("properties", {}):
+        for k, v in system_dict.get("properties", {}).items():
             data[k] = v
-        for k, v in system_dict:
+        for k, v in system_dict.items():
             if k == "properties":
                 continue
             data[k] = v
