@@ -755,7 +755,7 @@ class Asset(BaseAsset):
         last = last.replace(microsecond=0)
         return {
             "title": "last boot",
-            "value": last,
+            "value": last.timestamp(),
             "source": self.s_probe
         }
 
