@@ -279,11 +279,15 @@ class Collector(shared.OsvcThread):
         else:
             self.log.debug("send daemon status, resync")
         try:
-            if self.oc3_version >= Semver(1, 0, 1):
+            if self.oc3_version >= Semver(1, 0, 4):
                 begin = time.time()
                 oc3_path = "/oc3/feed/daemon/status"
-                headers = {"XDaemonChange": " ".join(list(self.last_status_changed))}
-                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                body = {
+                    "version": "2.1",
+                    "data": data,
+                    "changes": list(self.last_status_changed)
+                }
+                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
                 if status_code != 202:
                     self.log.error("dbg collector POST %s unexpected status code %d %0.3f", status_code, oc3_path, time.time() - begin)
                 else:
