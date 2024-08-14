@@ -431,11 +431,11 @@ class Collector(shared.OsvcThread):
             elif status_code in [404]:
                 if version != Semver():
                     # collector has no anymore oc3 configured, reset to null
-                    self.log.warning("oc3 version skip cache (GET /oc3/version http status code %d)", resp.code)
+                    self.log.warning("oc3 version skip cache (GET /oc3/version http status code %d)", status_code)
                 version = null_version
             else:
                 # 502 Bad Gateway, 503 Service Unavailable: oc3 is not yet ready
-                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)", resp.code)
+                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)", status_code)
         except Exception as err:
             if version > null_version:
                 self.log.warning("oc3 version preserve cache (GET /oc3/version error: %s)", str(err))
