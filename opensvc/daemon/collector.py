@@ -136,7 +136,38 @@ class Collector(shared.OsvcThread):
                 "csum": csum,
             }, f)
 
-    def get_last_config(self, data):
+    def purge_configs_sent(self, paths):
+        self.last_config = {}
+        for p in paths:
+            self.purge_config_sent(p)
+
+    def purge_config_sent(self, path):
+        self.log.info("purging sent config %s", path)
+        p = self.config_sent_file(path)
+        try:
+            os.unlink(p)
+        except:
+            pass
+        try:
+            del self.last_config[path]
+        except KeyError:
+            pass
+
+    def changed_config(self, data):
+        """
+        returns {"<path>": "csum", ...} where path is defined into daemondata nodes.<localhost>.services.config
+        and where the config csum differ from the value detected during last changed_config function call.
+
+        It uses config cache: self.last_config (dict {"<path>": "csum", ...}) to detect changes since last call.
+        self.last_config is refreshed on each call.
+
+        Already sent path:csum is not expected to be returned again, so during daemon startup, so we populate the
+        self.last_config from the object's config_sent.json file. This file is updated when send_service_config succeed,
+        so if send_service_config fails, same path:csum will be returned again during next daemon startup.
+
+        To force a path:csum to be returned again, we have to remove its object's config_sent.json file and delete the
+        live cache value self.last_config[path].
+        """
         last_config = {}
         last_config_changed = {}
         for path, sdata in data["nodes"].get(Env.nodename, {}).get("services", {}).get("config", {}).items():
@@ -287,11 +318,16 @@ class Collector(shared.OsvcThread):
                     "data": data,
                     "changes": list(self.last_status_changed)
                 }
-                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
+                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
                 if status_code != 202:
                     self.log.error("dbg collector POST %s unexpected status code %d %0.3f", status_code, oc3_path, time.time() - begin)
                 else:
                     self.log.debug("dbg collector POST %s status code %d %0.3f", status_code, oc3_path, time.time() - begin)
+                    object_without_config = response_body.get("object_without_config", [])
+                    if len(object_without_config) > 0:
+                        # purge configs sent of object_without_config
+                        # => next run will send service config to collector
+                        self.purge_configs_sent(object_without_config)
             else:
                 shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
@@ -304,13 +340,17 @@ class Collector(shared.OsvcThread):
             return
         self.log.debug("ping the collector")
         try:
-            if self.oc3_version >= Semver(1, 0, 1):
+            if self.oc3_version >= Semver(1, 0, 4):
                 begin = time.time()
                 oc3_path = "/oc3/feed/daemon/ping"
-                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path)
+                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path)
                 self.log.debug("POST %s %0.3f", status_code,time.time() - begin)
                 if status_code == 202:
-                    pass
+                    object_without_config = response_body.get("object_without_config", [])
+                    if len(object_without_config) > 0:
+                        # purge configs sent of object_without_config
+                        # => next run will send service config to collector
+                        self.purge_configs_sent(object_without_config)
                 elif status_code == 204:
                     self.log.debug("ping rejected, collector ask for resync")
                     self.send_daemon_status(data)
@@ -388,8 +428,17 @@ class Collector(shared.OsvcThread):
             #self.log.debug("no service")
             return
 
-        last_config_changed = self.get_last_config(data)
-        for path, csum in last_config_changed.items():
+        # TODO: move send service config to speaker block, this require first:
+        #  1- send_service_config should support non local objects.
+        #  2- changed_config should also return the non local objects.
+        #  3- send_containerinfo should be removed (its tasks should be done
+        #     during send_daemon_status) should be sufficient
+        #  This will allow speaker to use the "object_without_config" oc3 response
+        #  and force collector object config deleted to be pushed again.
+        #  Until this, we can only fix a collector object config deleted that exists
+        #  on the collector speaker.
+        changed_config = self.changed_config(data)
+        for path, csum in changed_config.items():
             self.send_service_config(path, csum)
             self.send_containerinfo(path)
 
