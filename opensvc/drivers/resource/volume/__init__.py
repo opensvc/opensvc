@@ -129,6 +129,14 @@ KEYWORDS = [
                 "signaled. This keyword is usually used to reload daemons on certicate or configuration files changes.",
         "example": "hup:container#1"
     },
+    {
+        "keyword": "nodes",
+        "at": True,
+        "inheritance": "leaf",
+        "text": "A node selector expression filtering the creator nodes to determine the volume nodes. "
+                "If not set, all the creator nodes will be volume nodes.",
+        "example": "site=p17",
+    },
 ]
 
 KEYS.register_driver(
@@ -161,7 +169,7 @@ class Volume(Resource):
     def __init__(self, name=None, pool=None, pooltype=None, size=None,
                  format=True, access="rwo", secrets=None, configs=None,
                  user=None, group=None, perm=None, dirperm=None,
-                 signal=None, directories=None, **kwargs):
+                 signal=None, directories=None, nodes=None, **kwargs):
         super(Volume, self).__init__(type="volume", **kwargs)
         self.pooltype = pooltype
         self.access = access
@@ -179,6 +187,7 @@ class Volume(Resource):
         self.perm = perm
         self.dirperm = dirperm
         self.signal = signal
+        self.nodes = nodes
         self.can_rollback_vol_instance = False
         self.can_rollback_flag = False
 
@@ -765,10 +774,13 @@ class Volume(Resource):
         )
 
     def _configure_volume(self, volume, usage=True):
-        try:
-            nodes = self.svc._get("DEFAULT.nodes")
-        except ex.OptNotFound:
-            nodes = None
+        if self.nodes:
+            nodes = self.nodes
+        else:
+            try:
+                nodes = self.svc._get("DEFAULT.nodes")
+            except ex.OptNotFound:
+                nodes = None
         pool = None
         try:
             pool = self.find_pool(usage=usage, shared=self.shared)

@@ -758,9 +758,14 @@ class SymMixin(object):
             "out": out,
             "err": err,
         })
-        if sgs:
-            cmd = ["-sg", name, "add", "sg", ",".join(sgs)]
+        for sg in sgs:
+            cmd = ["-sg", name, "add", "sg", sg]
             out, err, ret = self.symsg(cmd, xml=False, log=True)
+            if ret != 0 and "group is currently within device masking view" in err:
+                # already done
+                ret = 0
+                out = err
+                err = ""
             result.append({
                 "cmd": ["symsg"] + cmd,
                 "ret": ret,
@@ -811,7 +816,7 @@ class SymMixin(object):
         missing = tgt_gks - cur_gks
         if missing <= 0:
             return []
-        cmd = ["create", "-gk", "-N", str(missing), "-sg", sg]
+        cmd = ["create", "-gk", "-N", str(missing), "-sg", sg, "-noprompt"]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
         result = [{
             "cmd": ["symdev"] + cmd,

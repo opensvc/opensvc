@@ -129,3 +129,13 @@ def assert_file_is_root_only_writeable(filename):
         raise Exception("%s does not belong to root" % filename)
     if stat_info.st_mode & stat.S_IWOTH:
         raise Exception("%s is world writable" % filename)
+
+def unlink_and_sync(filename):
+    os.unlink(filename)
+    dirname = os.path.dirname(filename)
+    fd = os.open(dirname, os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
