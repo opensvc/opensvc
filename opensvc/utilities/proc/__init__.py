@@ -588,6 +588,9 @@ def daemon_process_running():
     try:
         with open(Env.paths.daemon_pid, 'r') as pid_file:
             pid = int(pid_file.read())
+            if pid == os.getpid():
+                # don't match ourselves
+                return False
         with open(Env.paths.daemon_pid_args, 'r') as pid_args_file:
             search_args = pid_args_file.read()
         return process_match_args(pid, search_args=search_args)
