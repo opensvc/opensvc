@@ -343,7 +343,13 @@ class Collector(shared.OsvcThread):
             if self.oc3_version >= Semver(1, 0, 4):
                 begin = time.time()
                 oc3_path = "/oc3/feed/daemon/ping"
-                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path)
+                body = {
+                    "version": "2.1",
+                    "nodes": list(data.get("nodes", {}).keys()),
+                    "objects": list(data.get("services", {}).keys()),
+                }
+                self.log.info("POST %s %s", oc3_path, body)
+                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
                 self.log.debug("POST %s %0.3f", status_code,time.time() - begin)
                 if status_code == 202:
                     object_without_config = response_body.get("object_without_config", [])
