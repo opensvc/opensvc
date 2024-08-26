@@ -2924,6 +2924,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "ha": self.ha,
         })
 
+    def has_monitored_resources(self):
+        return False
+
     def oc3_object_config_body(self):
         try:
             with open(self.paths.cf, "rb") as file:
@@ -2946,7 +2949,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "comment": self.comment,
                     "app": self.app,
                     # TODO: use real value for monitored_resource_count instead of 1
-                    "monitored_resource_count": 1 if self.has_monitored_resources else 0,
+                    "monitored_resource_count": 1 if self.has_monitored_resources() else 0,
                     "encap": self.encap,
                     "raw_config": raw_config,
                 }
