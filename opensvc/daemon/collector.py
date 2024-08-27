@@ -137,7 +137,6 @@ class Collector(shared.OsvcThread):
             }, f)
 
     def purge_configs_sent(self, paths):
-        self.last_config = {}
         for p in paths:
             self.purge_config_sent(p)
 
