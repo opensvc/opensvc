@@ -348,7 +348,7 @@ class Collector(shared.OsvcThread):
                     "nodes": list(data.get("nodes", {}).keys()),
                     "objects": list(data.get("services", {}).keys()),
                 }
-                self.log.info("POST %s %s", oc3_path, body)
+                self.log.debug("POST %s %s", oc3_path, body)
                 status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
                 self.log.debug("POST %s %0.3f", status_code,time.time() - begin)
                 if status_code == 202:
