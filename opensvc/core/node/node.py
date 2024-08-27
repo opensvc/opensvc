@@ -1181,7 +1181,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 if self.oc3_version() >= Semver(1, 0, 2):
                     from utilities.rfc3339 import RFC3339
 
-                    if hasattr(system_dict.get("properties", {}), "last_boot"):
+                    if "last_boot" in system_dict.get("properties", {}):
                         last_boot = system_dict["properties"]["last_boot"]["value"]
                         system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
                     status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
