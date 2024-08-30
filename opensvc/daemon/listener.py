@@ -377,7 +377,7 @@ class Listener(shared.OsvcThread):
                 ispkg = modinfo[2]
             if ispkg:
                 continue
-            if name.split(".")[-1] not in ("get", "post"):
+            if name.split(".")[-1] not in ("get", "post", "delete"):
                 continue
             try:
                 mod = importlib.import_module(name)
