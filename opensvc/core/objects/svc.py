@@ -3783,9 +3783,10 @@ class Svc(PgMixin, BaseSvc):
             rids = [r.rid for r in self.get_resources("task")]
         else:
             rids = [rid for rid in rids if rid.startswith("task")]
+        import utilities.runfiles
         for rid in rids:
-            lockfile = os.path.join(self.var_d, rid, "run.lock")
-            if self._get_running(lockfile).get("intent") == "run":
+            d = os.path.join(self.var_d, rid, "run")
+            if utilities.runfiles.has_running(d):
                 running.append(rid)
         return [rid for rid in running if rid]
 

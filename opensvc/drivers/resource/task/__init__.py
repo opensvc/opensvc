@@ -7,11 +7,14 @@ import sys
 import core.status
 import core.exceptions as ex
 import utilities.lock
+import utilities.runfiles
+from env import Env
 from core.scheduler import SchedOpts
 from utilities.lazy import lazy
 from core.resource import Resource
 from foreign.six.moves import input
 from utilities.proc import lcall
+from utilities.files import makedirs
 
 KEYWORDS = [
     {
@@ -49,6 +52,13 @@ KEYWORDS = [
         "at": True,
         "text": "A command to execute on :c-action:`run` action if :kw:`command` returned an error.",
         "example": "/srv/{name}/data/scripts/task_on_error.sh"
+    },
+    {
+        "keyword": "max_parallel",
+        "at": True,
+        "default": 1,
+        "convert": "integer",
+        "text": "Allow running the task multiple times concurrently.",
     },
     {
         "keyword": "check",
@@ -140,6 +150,7 @@ class BaseTask(Resource):
                  configs_environment=None,
                  secrets_environment=None,
                  check=None,
+                 max_parallel=1,
                  **kwargs):
         super(BaseTask, self).__init__(type=type, **kwargs)
         self.command = command
@@ -156,6 +167,7 @@ class BaseTask(Resource):
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
         self.checker = check
+        self.max_parallel = max_parallel
 
     def __str__(self):
         return "%s command=%s user=%s" % (
@@ -185,6 +197,25 @@ class BaseTask(Resource):
 
     def boot(self):
         self.remove_last_run_retcode()
+
+    @lazy
+    def running_d(self):
+        return os.path.join(self.var_d, "run")
+
+    @lazy
+    def running_f(self):
+        return os.path.join(self.running_d, str(os.getpid()))
+
+    def set_running(self):
+        makedirs(self.running_d)
+        with open(self.running_f, "w") as f:
+            f.write(Env.session_uuid)
+
+    def unset_running(self):
+        try:
+            os.unlink(self.running_f)
+        except FileNotFoundError:
+            pass
 
     @lazy
     def last_run_retcode_f(self):
@@ -256,12 +287,20 @@ class BaseTask(Resource):
 
     def run(self):
         try:
-            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=0, intent="run"):
+            with utilities.lock.cmlock(lockfile=os.path.join(self.var_d, "run.lock"), timeout=1, intent="run"):
+                n = utilities.runfiles.count(self.running_d, log=self.log, cleanup=True)
+                if n >= self.max_parallel:
+                    raise ex.Error("task is already running %d times" % n)
+                self.set_running()
+            try:
                 self._run()
+            finally:
+                self.unset_running()
         except utilities.lock.LOCK_EXCEPTIONS:
-            raise ex.Error("task is already running (maybe too long for the schedule)")
+            raise
         finally:
-            self.svc.notify_done("run", rids=[self.rid])
+            if utilities.runfiles.count(self.running_d) == 0:
+                self.svc.notify_done("run", rids=[self.rid])
 
     def _run(self):
         """
@@ -292,6 +331,9 @@ class BaseTask(Resource):
         pass
 
     def _status(self, verbose=False):
+        n = utilities.runfiles.count(self.running_d, self.log)
+        if n >= self.max_parallel:
+            self.status_log("%d/%s max parallel runs reached" % (n, self.max_parallel), "info")
         if not self.checker:
             return core.status.NA
         elif self.checker == "last_run":
