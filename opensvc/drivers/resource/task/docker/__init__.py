@@ -58,6 +58,15 @@ class TaskDocker(ContainerDocker, BaseTask):
         BaseTask.__init__(self, *args, **kwargs)
         self.start_timeout = self.timeout
 
+    def on_add(self):
+        if self.max_parallel > 1:
+            print(self.container_name)
+            from utilities.lazy import set_lazy, unset_lazy
+            from os import getpid
+            set_lazy(self, "container_name", "%s.%d" % (self.container_name, getpid()))
+            set_lazy(self, "container_label_id", "%s.%d" % (self.container_label_id, getpid()))
+            unset_lazy(self, "container_id")
+
     _info = ContainerDocker._info
 
     def start(self):

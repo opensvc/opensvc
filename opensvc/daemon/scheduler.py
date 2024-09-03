@@ -257,7 +257,7 @@ class Scheduler(shared.OsvcThread):
         cmd = Env.om + cmd_args
         self.privlog.info("run '%s'", " ".join(cmd_log))
 
-        flag_name = "launched.%s.%s" % (",".join(["-".join([str(s) for s in sig]) for sig in sigs]), session_id)
+        flag_name = "launched.%s.%s" % (uuid.uuid4(), session_id)
         flag_launched = str(os.path.join(self.trace_dir, flag_name))
         env = os.environ.copy()
         env["OSVC_ACTION_ORIGIN"] = "daemon"
