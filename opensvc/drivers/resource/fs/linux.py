@@ -296,7 +296,7 @@ class Fs(BaseFs):
         data = {}
         for line in out.splitlines():
             v = line.split()
-            data[v[0]] = line[len(v[0]):].strip()
+            data[v[0].rstrip(":")] = line[len(v[0]):].strip()
         return data
 
     @lazy
@@ -348,15 +348,26 @@ class Fs(BaseFs):
                 mps |= self._mplist([self.devname_to_dev(slave) for slave in slaves])
         return mps
 
-    def is_multipath(self, minor):
+    def dm_table(self, minor):
         devno = "%d:%d" % (self.dm_major, minor)
         if devno not in self.dmsetup_ls_multipath_rev:
-            return False
+            return "", False
         name = self.dmsetup_ls_multipath_rev[devno]
         dmsetup_table = self.dmsetup_table()
-        if name not in dmsetup_table:
+        return name, dmsetup_table.get(name)
+
+    def is_multipath_simple(self, minor):
+        name, table = self.dm_table(minor)
+        if not table:
             return False
-        elements = dmsetup_table[name].split()
+        elements = table.split()
+        return 'multipath' in elements
+
+    def is_multipath(self, minor):
+        name, table = self.dm_table(minor)
+        if not table:
+            return False
+        elements = table.split()
         if 'queue_if_no_path' not in elements:
             return False
         dmsetup_status = self.dmsetup_status()
@@ -400,6 +411,9 @@ class Fs(BaseFs):
             raise ex.Error
 
         if not self.is_devmap(statinfo):
+            return set([dev])
+
+        if self.is_multipath_simple(os.minor(statinfo.st_rdev)):
             return set([dev])
 
         if utilities.devices.linux.lv_exists(self, dev):

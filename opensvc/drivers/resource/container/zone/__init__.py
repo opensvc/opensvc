@@ -970,14 +970,25 @@ class ContainerZone(BaseContainer):
             for network_interface in sysidcfg_network_interfaces[:1]:
                 contents += network_interface + '\n'
             domain, nameservers, searchs = self.get_ns()
-            if not nameservers or not domain:
-                name_service = "name_service=NONE"
-            else:
+            if not nameservers:
+                name_service = "name_service=NONE\n"
+            elif searchs and domain:
                 name_service = "name_service=DNS {domain_name=%s" % domain
                 name_service += "\n    name_server=%s" % ','.join(nameservers)
-                if searchs:
-                    name_service += "\n    search=%s" % ','.join(searchs)
+                name_service += "\n    search=%s" % ','.join(searchs)
                 name_service += "\n    }\n"
+            elif searchs:
+                # use first entry of search as domain_name
+                name_service = "name_service=DNS {domain_name=%s" % searchs[0]
+                name_service += "\n    name_server=%s" % ','.join(nameservers)
+                name_service += "\n    search=%s" % ','.join(searchs)
+                name_service += "\n    }\n"
+            elif domain:
+                name_service = "name_service=DNS {domain_name=%s" % domain
+                name_service += "\n    name_server=%s" % ','.join(nameservers)
+                name_service += "\n    }\n"
+            else:
+                name_service = "name_service=NONE\n"
             contents += name_service
 
             with open(self.sysidcfg, "w") as sysidcfg_file:

@@ -98,6 +98,12 @@ class DiskScsireservSg(BaseDiskScsireserv):
             return 1
         return 0
 
+    def get_mpath_registrations(self, path, paths):
+        ret, out, err = self.read_mpath_registrations(path)
+        n_expected = self.get_expected_registration_count(path, paths)
+        n_registered = out.count(self.hostid)
+        return n_expected, n_registered
+
     def read_mpath_registrations(self, disk):
         if not os.path.exists(disk):
             return 1, "", ""
@@ -105,6 +111,49 @@ class DiskScsireservSg(BaseDiskScsireserv):
         cmd = ["mpathpersist", "-i", "-k", disk]
         ret, out, err = self.call(cmd)
         return ret, out, err
+
+    def get_path_registrations(self, path, paths):
+        self.ack_unit_attention(path)
+        ret, out, err = self.read_path_registrations(path)
+        if ret != 0:
+            return 0, 0
+        n_expected = self.get_expected_registration_count(path, paths)
+        n_registered = out.count(self.hostid)
+        return n_expected, n_registered
+
+    def get_expected_registration_count(self, path, paths):
+        if Env.sysname != "Linux":
+            return len(paths)
+        try:
+            from utilities.diskinfo import DiskInfo
+            if DiskInfo(deferred=True).disk_vendor(path).strip() != "3PARdata":
+                return len(paths)
+            if DiskInfo(deferred=True).disk_model(path).strip() != "VV":
+                return len(paths)
+        except Exception:
+            return len(paths)
+
+        # Here we known the mpath is served by a 3PARdata array.
+        # This array show one registration per I_L nexus, instead of the
+        # standard per I_T_L nexus. So the expected registration count is
+        # the number of unique I (hostid) of the paths of L. 
+
+        hostids = set()
+        # example:
+        #  ["/dev/sdy", "/dev/sdaf", "/dev/sdk", "/dev/sdr"]
+        for p in paths:
+            sysdev = os.path.realpath("/sys/block/%s/device"%os.path.basename(p))
+            # => /sys/block/sdy/device  (symlink to ../../../3:0:0:172/)
+
+            t = os.path.basename(sysdev)
+            # => "3:0:0:172"
+
+            hostid = t.split(":")[0]
+            # => "3"
+
+            hostids.add(hostid)
+        # set("3", "4")
+        return len(hostids)
 
     def read_path_registrations(self, disk):
         if not os.path.exists(disk):
@@ -115,23 +164,23 @@ class DiskScsireservSg(BaseDiskScsireserv):
         return ret, out, err
 
     def read_registrations(self):
-        n_paths = 0
+        n_expected = 0
         n_registered = 0
         for mpath, paths in self.devs.items():
+            n_paths = len(paths)
             if self.use_mpathpersist(mpath):
-                ret, out, err = self.read_mpath_registrations(mpath)
-                n_paths += len(paths)
-                n_registered += out.count(self.hostid)
+                i, j = self.get_mpath_registrations(mpath, paths)
+                n_expected += i
+                n_registered += j
             else:
                 for path in paths:
-                    self.ack_unit_attention(path)
-                    ret, out, err = self.read_path_registrations(path)
-                    if ret != 0:
+                    i, j = self.get_path_registrations(path, paths)
+                    if not i and not j:
                         continue
-                    n_paths += len(paths)
-                    n_registered += out.count(self.hostid)
+                    n_expected += i
+                    n_registered += j
                     break
-        return n_paths, n_registered
+        return n_expected, n_registered
 
     def check_all_paths_registered(self):
         n_paths, n_registered = self.read_registrations()
