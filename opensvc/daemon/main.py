@@ -86,7 +86,7 @@ def fork(func, args=None, kwargs=None):
 
     if os.fork() > 0:
         # return to parent execution
-        return
+        os._exit(0)
 
     # separate the son from the father
     os.chdir('/')
@@ -98,6 +98,14 @@ def fork(func, args=None, kwargs=None):
             os._exit(0)
     except Exception:
         os._exit(1)
+
+    # Add delay to ensure parents process exit.
+    # This prevents daemon start abort on <detect running daemon process (from parents main or fork1 during boot)>
+    # PID  DESC
+    # i    main => fork() <defunct>
+    # i+1    fork1 => fork() <defunct>
+    # i+2      fork2 => read <i> from pidfile, check if <i> is alive => abort
+    time.sleep(0.2)
 
     # Redirect standard file descriptors.
     if hasattr(os, "devnull"):
@@ -236,7 +244,7 @@ class Daemon(object):
             if last_pid_trace == str(self.pid):
                 return False
             else:
-                self.log.error("another daemon process is already running with pid %s" % last_pid_trace)
+                self.log.error("detect running daemon process from %s: %s (our pid/ppid is %d/%d)" % (Env.paths.daemon_pid, last_pid_trace, os.getpid(), os.getppid()))
                 return True
         else:
             return False
