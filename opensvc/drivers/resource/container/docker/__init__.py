@@ -652,7 +652,14 @@ class ContainerDocker(BaseContainer):
             timeout = None
 
         concurrent_futures = get_concurrent_futures()
-        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+        # defines max_workers to avoid ThreadPoolExecutor(max_worker=None) with python 3.4 to avoir following
+        # exception:
+        #   File "/usr/lib64/python3.4/concurrent/futures/thread.py", line 116, in _adjust_thread_count
+        #     if len(self._threads) < self._max_workers:
+        # TypeError: unorderable types: int() < NoneType()
+        #
+        max_workers = min(32, (os.cpu_count() or 1) + 4)
+        with concurrent_futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             future = executor.submit(self.vcall, cmd, warn_to_info=True, env=env)
             try:
                 ret = future.result(timeout=timeout)[0]
