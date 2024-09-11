@@ -5117,7 +5117,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         futures = {}
         data = {}
         concurrent_futures = get_concurrent_futures()
-        with concurrent_futures.ThreadPoolExecutor(max_workers=None) as executor:
+        # defines max_workers to avoid ThreadPoolExecutor(max_worker=None) with python 3.4 to avoir following
+        # exception:
+        #   File "/usr/lib64/python3.4/concurrent/futures/thread.py", line 116, in _adjust_thread_count
+        #     if len(self._threads) < self._max_workers:
+        # TypeError: unorderable types: int() < NoneType()
+        max_workers = min(32, (os.cpu_count() or 1) + 4)
+        with concurrent_futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             for name in pools:
                 pool = self.get_pool(name)
                 futures[name] = executor.submit(self._pool_status_job, name, pool, volumes, usage)
