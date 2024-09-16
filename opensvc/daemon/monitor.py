@@ -1092,6 +1092,13 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
 
     def service_toc(self, path):
         self.set_smon(path, "tocing")
+        try:
+            # Do our best to have most recent log sync on file system, node is going to crash of fast reboot
+            if hasattr(os, "fsync"):
+                with open(os.path.join(Env.paths.pathlog, "node.log"), "a") as fd:
+                    os.fsync(fd)
+        except:
+            pass
         proc = self.service_command(path, ["toc"])
         self.push_proc(
             proc=proc,
