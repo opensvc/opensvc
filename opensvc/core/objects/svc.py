@@ -4073,6 +4073,14 @@ class Svc(PgMixin, BaseSvc):
         self.log.info("start monitor action '%s'", self.monitor_action)
         if self.monitor_action not in ("freezestop", "switch"):
             time.sleep(2)
+
+        try:
+            # Do our best to have most recent log sync on file system, node is going to crash of fast reboot
+            if hasattr(os, "fsync"):
+                with open(os.path.join(self.log_d, self.name+".log"), "a") as fd:
+                    os.fsync(fd)
+        except:
+            pass
         getattr(self, self.monitor_action)()
 
     def encap_cmd(self, cmd, verbose=False, unjoinable="raise", error="raise"):
