@@ -295,6 +295,8 @@ class Arrays(object):
                 elif model.startswith("PowerMax"):
                     self.arrays.append(PowerMax(name, symcli_path, symcli_connect, username, password, node=self.node))
                     done.append(name)
+                #elif model.startswith("DMX-3"):
+                #    self.arrays.append(Dmx3(name, symcli_path, symcli_connect, username, password, node=self.node))
                 elif 'DMX' in model or '3000-M' in model:
                     self.arrays.append(Dmx(name, symcli_path, symcli_connect, username, password, node=self.node))
                     done.append(name)
@@ -826,9 +828,13 @@ class SymMixin(object):
         }]
         return result
 
+
+    def to_cyl(self, size):
+        n = convert_size(size, _to="KB") // self.cylinder
+        return n or 1
+
     def add_dev(self, data):
         size = data.get("size")
-        size = convert_size(size, _to="MB")
         name = data.get("name", "NONAME")
         sg = data.get("sg")
         cmd = ["show", sg]
@@ -846,7 +852,7 @@ class SymMixin(object):
         return result
 
     def create_tdev(self, size, name, sg=None, sid=None):
-        cmd = ["create", "-tdev", "-N", "1", "-cap", str(size), "-captype", "mb"]
+        cmd = ["create", "-tdev", "-N", "1", "-cap", str(self.to_cyl(size)), "-captype", "cyl"]
         if sg:
             cmd += ["-sg", sg,]
         cmd += ["-emulation", "FBA", "-device_name", name, "-noprompt", "-v"]
@@ -1018,8 +1024,6 @@ class Vmax(SymMixin):
         if size is None:
             raise ex.Error("The '--size' parameter is mandatory")
 
-        size = convert_size(size, _to="MB")
-
         out, err, ret = self.create_tdev(size, name)
         if ret != 0:
             raise ex.Error(err)
@@ -1143,12 +1147,12 @@ class Vmax(SymMixin):
         if len(dev_data) != 1:
             raise ex.Error("device %s does not exist" % dev)
         dev_data = dev_data[0]
-        current_size = int(dev_data["Capacity"]["megabytes"])
+        current_size = int(dev_data["Capacity"]["cylinders"])
         if size.startswith("+"):
-            incr = convert_size(size.lstrip("+"), _to="MB")
+            incr = self.to_cyl(size.lstrip("+"))
             size = str(current_size + incr)
         else:
-            size = str(convert_size(size, _to="MB"))
+            size = str(self.to_cyl(size))
         if not force and int(size) < current_size:
             raise ex.Error("the target size is smaller than the current "
                               "size. refuse to process. use --force if you "
@@ -1161,7 +1165,7 @@ class Vmax(SymMixin):
         if rdf_data and not isinstance(self, PowerMax):
             self.deletepair(dev)
             deleted = True
-        cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "mb", "-noprompt"]
+        cmd = ["modify", dev, "-tdev", "-cap", str(size), "-captype", "cyl", "-noprompt"]
         if rdf_data and isinstance(self, PowerMax):
             cmd += ["-rdfg", rdf_data["Local"]["ra_group_num"]]
         out, err, ret = self.symdev(cmd, xml=False, log=True)
@@ -1436,6 +1440,8 @@ class Vmax(SymMixin):
 
 
 class Dmx(SymMixin):
+    cylinder = 480 # KB
+
     def __init__(self, *args, **kwargs):
         SymMixin.__init__(self, *args, **kwargs)
         self.keys += ['sym_maskdb']
@@ -1445,8 +1451,11 @@ class Dmx(SymMixin):
         out, err, ret = self.symaccesscmd(cmd)
         return out
 
+class Dmx3(Dmx):
+    cylinder = 960 # KB
+
 class PowerMax(Vmax):
-    pass
+    cylinder = 1920 # KB
 
 def do_action(action, array_name=None, node=None, **kwargs):
     o = Arrays()
