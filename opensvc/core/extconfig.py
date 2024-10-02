@@ -240,11 +240,20 @@ class ExtConfigMixin(object):
             except Exception:
                 section = "DEFAULT"
                 option = kw
-            try:
-                del cd[section][option]
-                deleted += 1
-            except KeyError:
-                continue
+            if "#" not in section and section in self.default_status_groups:
+                # <group>.keyword[@<scope>] format => loop over all rids in group
+                for rid in [rid for rid in cd if rid.startswith(section+"#")]:
+                    try:
+                        del cd[rid][option]
+                        deleted += 1
+                    except KeyError:
+                        continue
+            else:
+                try:
+                    del cd[section][option]
+                    deleted += 1
+                except KeyError:
+                    continue
         if not deleted:
             return 0
         try:
