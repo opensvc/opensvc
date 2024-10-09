@@ -164,7 +164,12 @@ class ContainerKvm(BaseContainer):
         return True
 
     def rcp_from(self, src, dst):
-        return "", "", 0
+        if self.qga:
+            # TODO
+            return "", "", 0
+        else:
+            cmd = Env.rcp.split() + [self.name+":"+src, dst]
+            return justcall(cmd)
 
     def rcp(self, src, dst):
         if self.qga:
