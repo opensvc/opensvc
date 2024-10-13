@@ -181,7 +181,6 @@ class Asset(BaseAsset):
             last = datetime.datetime.now() - datetime.timedelta(seconds=int(uptime))
         except:
             return
-        last = last.strftime("%Y-%m-%d")
         return {
             "title": "last_boot",
             "value": last,

@@ -3,6 +3,7 @@ The module defining the Svc class.
 """
 from __future__ import print_function, unicode_literals
 
+import base64
 import hashlib
 import itertools
 import logging
@@ -38,6 +39,7 @@ from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
                               svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory, split_path)
 from utilities.proc import (action_triggers, drop_option, has_option, find_editor,
                             init_locale, justcall, lcall, vcall)
+from utilities.semver import Semver
 from utilities.storage import Storage
 from utilities.string import is_string
 
@@ -2922,6 +2924,38 @@ class BaseSvc(Crypt, ExtConfigMixin):
             "ha": self.ha,
         })
 
+    def has_monitored_resources(self):
+        return False
+
+    def oc3_object_config_body(self):
+        try:
+            with open(self.paths.cf, "rb") as file:
+                file_content = file.read()
+                raw_config = base64.b64encode(file_content).decode("utf-8")
+                if raw_config == "":
+                    raise ex.Error("empty config file")
+
+                return {
+                    "path": self.path,
+                    "orchestrate": self.orchestrate,
+                    "topology": self.topology,
+                    "flex_min": self.flex_min,
+                    "flex_max": self.flex_max,
+                    "flex_target": self.flex_target,
+                    "env": self.svc_env,
+                    "scope": self.ordered_nodes,
+                    "drpnode": self.drpnode,
+                    "drpnodes": self.ordered_drpnodes,
+                    "comment": self.comment,
+                    "app": self.app,
+                    # TODO: use real value for monitored_resource_count instead of 1
+                    "monitored_resource_count": 1 if self.has_monitored_resources() else 0,
+                    "encap": self.encap,
+                    "raw_config": raw_config,
+                }
+        except Exception as err:
+            raise ex.Error("prepare oc3 feed object body: %s" % str(err))
+
 
 class Svc(PgMixin, BaseSvc):
     """
@@ -4943,7 +4977,19 @@ class Svc(PgMixin, BaseSvc):
         Push the service config to the collector. Usually done
         automatically by the collector thread.
         """
-        self.node.collector.call('push_config', self.send_service_config_args())
+        if self.node.oc3_version() >= Semver(1, 0, 3):
+            oc3_path = "/oc3/feed/object/config"
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            self.log.info("POST %s", oc3_path)
+            try:
+                data = self.oc3_object_config_body()
+                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                if status_code != 202:
+                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+            except Exception as exc:
+                raise ex.Error(str(exc))
+        else:
+            self.node.collector.call('push_config', self.send_service_config_args())
 
     def push_resinfo(self):
         """

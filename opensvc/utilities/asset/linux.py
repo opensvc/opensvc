@@ -8,6 +8,7 @@ from utilities.storage import Storage
 from utilities.proc import justcall, which
 from utilities.string import bdecode
 
+
 def is_container():
     p = '/proc/1/environ'
     if not os.path.exists(p):
@@ -17,6 +18,7 @@ def is_container():
     if "container=lxc" in bdecode(buff):
         return True
     return False
+
 
 class Asset(BaseAsset):
     def __init__(self, node):
@@ -142,19 +144,19 @@ class Asset(BaseAsset):
     def _get_mem_banks(self):
         if self.container:
             return 'n/a'
-        banks =  0
+        banks = 0
         inBlock = False
         for l in self.dmidecode:
             if not inBlock and l == "Memory Device":
-                 inBlock = True
+                inBlock = True
             if inBlock and "Size:" in l:
-                 e = l.split()
-                 if len(e) == 3:
-                     try:
-                         size = int(e[1])
-                         banks += 1
-                     except:
-                         pass
+                e = l.split()
+                if len(e) == 3:
+                    try:
+                        size = int(e[1])
+                        banks += 1
+                    except:
+                        pass
         return str(banks)
 
     def _get_mem_slots(self):
@@ -187,7 +189,7 @@ class Asset(BaseAsset):
             with open('/etc/lsb-release') as f:
                 for line in f.readlines():
                     if 'DISTRIB_ID' in line:
-                        return line.split('=')[-1].replace('\n','').strip('"')
+                        return line.split('=')[-1].replace('\n', '').strip('"')
         if os.path.exists('/etc/debian_version'):
             return 'Debian'
         if os.path.exists('/etc/SuSE-release'):
@@ -218,11 +220,11 @@ class Asset(BaseAsset):
         with open('/etc/lsb-release') as f:
             for line in f.readlines():
                 if 'DISTRIB_RELEASE' in line:
-                    r = line.split('=')[-1].replace('\n','').strip('"')
+                    r = line.split('=')[-1].replace('\n', '').strip('"')
                     if r:
                         break
                 if 'DISTRIB_DESCRIPTION' in line:
-                    r = line.split('=')[-1].replace('\n','').strip('"')
+                    r = line.split('=')[-1].replace('\n', '').strip('"')
                     if r:
                         break
         if r:
@@ -251,11 +253,11 @@ class Asset(BaseAsset):
     def _get_os_release(self):
         r = self._get_os_release_os_release()
         if r == "Enterprise Linux" and self.os_release.version:
-           # prior to el8, the pretty name did not include the version
-           return r + " " + self.os_release.version
+            # prior to el8, the pretty name did not include the version
+            return r + " " + self.os_release.version
         if r and r not in (
-           "/Linux",
-           "Linux 7 (Core)" # centos7 poor pretty_name
+            "/Linux",
+            "Linux 7 (Core)"  # centos7 poor pretty_name
         ):
             return r
         files = ['/etc/debian_version',
@@ -268,9 +270,9 @@ class Asset(BaseAsset):
             with open('/etc/SuSE-release') as f:
                 for line in f.readlines():
                     if 'VERSION' in line:
-                        v += [line.split('=')[-1].replace('\n','').strip('" ')]
+                        v += [line.split('=')[-1].replace('\n', '').strip('" ')]
                     if 'PATCHLEVEL' in line:
-                        v += [line.split('=')[-1].replace('\n','').strip('" ')]
+                        v += [line.split('=')[-1].replace('\n', '').strip('" ')]
             return '.'.join(v)
         if os.path.exists('/etc/alpine-release'):
             with open('/etc/alpine-release') as f:
@@ -581,7 +583,7 @@ class Asset(BaseAsset):
             fpath = os.path.dirname(target)
             fpath = os.path.join(fpath, "port_state")
             try:
-                with open(fpath,"r") as f:
+                with open(fpath, "r") as f:
                     buff = f.read().strip()
             except Exception:
                 return False
@@ -594,8 +596,8 @@ class Asset(BaseAsset):
         for hba in hbas:
             if not hba["hba_type"].startswith('fc'):
                 continue
-            targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name'%hba["host"])
-            targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name'%hba["host"])
+            targets = glob.glob('/sys/class/fc_transport/target%s:*/port_name' % hba["host"])
+            targets += glob.glob('/sys/class/fc_remote_ports/rport-%s:*/port_name' % hba["host"])
             for target in targets:
                 with open(target, 'r') as f:
                     tgt_id = f.read().strip('0x').strip('\n')
@@ -750,12 +752,12 @@ class Asset(BaseAsset):
 
     def get_last_boot(self):
         with open("/proc/uptime", "r") as f:
-                s = f.readline().split()[0]
+            s = f.readline().split()[0]
         last = datetime.datetime.now() - datetime.timedelta(seconds=float(s))
         last = last.replace(microsecond=0)
         return {
             "title": "last boot",
-            "value": last.strftime("%Y-%m-%d %H:%M:%S"),
+            "value": last.timestamp(),
             "source": self.s_probe
         }
 

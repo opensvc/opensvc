@@ -301,7 +301,6 @@ class Asset(BaseAsset):
         if pid is None:
             return
         last = os.path.getmtime("/proc/%s" % pid)
-        last = datetime.datetime.fromtimestamp(last).strftime("%Y-%m-%d %H:%M:%S")
         return {
             "title": "last boot",
             "value": last,

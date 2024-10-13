@@ -650,27 +650,27 @@ class CollectorRpc(object):
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.insert_stats_fs_u(*args)
 
-    def push_pkg(self, sync=True):
-        import utilities.packages.list as p
+    def push_pkg(self, pkgs, sync=True):
         vars = ['pkg_nodename',
                 'pkg_name',
                 'pkg_version',
                 'pkg_arch']
-        vals = p.listpkg()
-        n = len(vals)
+        n = len(pkgs)
         if n == 0:
-            print("No package found. Skip push.")
             return
-        else:
-            print("Pushing %d packages information." % n)
-        n_fields = len(vals[0])
+        n_fields = len(pkgs[0])
         if n_fields >= 5:
             vars.append('pkg_type')
         if n_fields >= 6:
             vars.append('pkg_install_date')
+            for i, pkg in enumerate(pkgs):
+                if len(pkg) > 5:
+                    pkgs[i][5] = from_epoch(pkg[5]) if pkg[5] is not None else None
+                else:
+                    pkgs[i].append(None)
         if n_fields >= 7:
             vars.append('pkg_sig')
-        args = [vars, vals]
+        args = [vars, pkgs]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.insert_pkg(*args)
 
@@ -793,7 +793,10 @@ class CollectorRpc(object):
             _vars.append(key)
             if _d["value"] is None:
                 _d["value"] = ""
-            _vals.append(_d["value"])
+            if key == "last_boot":
+                _vals.append(from_epoch(_d["value"]))
+            else:
+                _vals.append(_d["value"])
         args = [_vars, _vals]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         if node.options.syncrpc:
@@ -1526,6 +1529,10 @@ class CollectorRpc(object):
         args = [Env.nodename]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         return self.proxy.collector_get_action_queue_v2(*args)
+
+
+def from_epoch(t):
+    return datetime.fromtimestamp(t).strftime("%Y-%m-%d %H:%M:%S")
 
 
 if __name__ == "__main__":

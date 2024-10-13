@@ -576,6 +576,7 @@ class OsvcThread(threading.Thread, Crypt):
         unset_lazy(self, "db_min_ping_interval")
         unset_lazy(self, "sorted_cluster_nodes")
         unset_lazy(self, "maintenance_grace_period")
+        unset_lazy(self, "oc3_version")
         unset_lazy(self, "rejoin_grace_period")
         unset_lazy(self, "ready_period")
         self.arbitrators_data = None

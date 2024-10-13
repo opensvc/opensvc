@@ -630,14 +630,13 @@ class BaseAsset(object):
 
     def get_last_boot(self):
         last = os.path.getmtime("/proc/1")
-        last = datetime.datetime.fromtimestamp(last).strftime("%Y-%m-%d %H:%M:%S")
         return {
             "title": "last boot",
             "value": last,
             "source": self.s_probe
         }
 
-    def get_asset_dict(self):
+    def get_asset_properties(self):
         data = {}
         data['nodename'] = {
             "title": "nodename",
@@ -721,6 +720,10 @@ class BaseAsset(object):
         team_support = self.get_team_support()
         if team_support is not None:
             data['team_support'] = team_support
+        return data
+
+    def get_asset_dict(self):
+        data = self.get_asset_properties()
         hardware = self.get_hardware()
         if hardware is not None:
             data['hardware'] = hardware
@@ -739,4 +742,39 @@ class BaseAsset(object):
         gids = self.get_gids()
         if gids is not None:
             data['gids'] = gids
+        return data
+
+    def get_system_dict(self):
+        data = {}
+        data["properties"] = self.get_asset_properties()
+        hardware = self.get_hardware()
+        if hardware is not None:
+            data['hardware'] = hardware
+        hba = self.get_hba()
+        if hba is not None:
+            data['hba'] = hba
+        targets = self.get_targets()
+        if targets is not None:
+            data['targets'] = targets
+        lan = self.get_lan()
+        if lan is not None:
+            data['lan'] = lan
+        uids = self.get_uids()
+        if uids is not None:
+            data['uids'] = uids
+        gids = self.get_gids()
+        if gids is not None:
+            data['gids'] = gids
+        return data
+
+    @classmethod
+    def system_dict_to_asset_dict(cls, system_dict):
+        system_dict = system_dict or {}
+        data = {}
+        for k, v in system_dict.get("properties", {}).items():
+            data[k] = v
+        for k, v in system_dict.items():
+            if k == "properties":
+                continue
+            data[k] = v
         return data

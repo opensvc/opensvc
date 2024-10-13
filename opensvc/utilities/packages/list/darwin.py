@@ -13,6 +13,7 @@ install-time: 1285389505
 groups: com.apple.snowleopard-repair-permissions.pkg-group com.apple.FindSystemFiles.pkg-group
 """
 
+
 def pkgversion(package):
     cmd = ['pkgutil', '--pkg-info', package]
     (ret, out, err) = call(cmd, errlog=False, cache=True)
@@ -24,7 +25,12 @@ def pkgversion(package):
             return l[1]
     return ''
 
+
 def listpkg():
+    """
+    Return a list of ips packages installed.
+    where pkg is (nodename, pkgname, version, "")
+    """
     if which('pkgutil') is None:
         return []
     cmd = ['pkgutil', '--packages']
@@ -36,6 +42,7 @@ def listpkg():
         x = [Env.nodename, line, pkgversion(line), ""]
         lines.append(x)
     return lines
+
 
 def listpatch():
     return []

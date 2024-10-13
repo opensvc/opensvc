@@ -54,6 +54,7 @@ from utilities.proc import call, justcall, vcall, which, check_privs, daemon_pro
     init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
+from utilities.semver import Semver
 from utilities.storage import Storage
 from utilities.string import bdecode, base64encode
 
@@ -1110,12 +1111,52 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         from utilities.asset import Asset
         return Asset(self)
 
+    def oc3_version(self):
+        "return cached oc3 version (value is maintained by collector thread)"
+        try:
+            with open(Env.paths.oc3_version, 'r') as f:
+                return Semver.parse(json.load(f).get("version", ""))
+        except:
+            return Semver()
+
     def pushpkg(self):
         """
         The pushpkg action entrypoint.
         Inventories the installed packages.
         """
-        self.collector.call('push_pkg')
+        import utilities.packages.list as p
+        pkgs = p.listpkg()
+        n = len(pkgs)
+        if n == 0:
+            print("No package found. Skip push.")
+            return
+        else:
+            print("Pushing %d packages information." % n)
+
+        if self.oc3_version() >= Semver(1, 0, 1):
+            from utilities.rfc3339 import RFC3339
+
+            rfc3339 = RFC3339()
+
+            def to_pkg_dict(l):
+                # l = (nodename, pkgname, version, arch, [type, [installed_at, [sig]]])
+                #
+                pkg = {"name": l[1], "version": l[2], "arch": l[3],
+                       "type": "", "sig": "", "installed_at": None}
+                n_fields = len(l)
+                if n_fields >= 5:
+                    pkg["type"] = l[4]
+                if n_fields >= 6:
+                    pkg["installed_at"] = rfc3339.from_epoch(l[5]) if l[5] is not None else None
+                if n_fields >= 7:
+                    pkg["sig"] = l[6]
+                return pkg
+            body = {"package": [to_pkg_dict(l) for l in pkgs]}
+            status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=body)
+            if status_code != 202:
+                raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
+        else:
+            self.collector.call('push_pkg', pkgs)
 
     def pushpatch(self):
         """
@@ -1129,14 +1170,28 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         The pushasset action entrypoint.
         Inventories the server properties.
         """
-        data = self.asset.get_asset_dict()
+        system_dict = self.asset.get_system_dict()
         try:
             if self.options.format is None:
-                self.print_asset(data)
+                self.print_asset(system_dict)
                 return
-            self.print_data(data)
+            self.print_data(system_dict)
         finally:
-            self.collector.call('push_asset', self, data)
+            try:
+                if self.oc3_version() >= Semver(1, 0, 2):
+                    from utilities.rfc3339 import RFC3339
+
+                    if "last_boot" in system_dict.get("properties", {}):
+                        last_boot = system_dict["properties"]["last_boot"]["value"]
+                        system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
+                    status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
+                    if status_code != 202:
+                        raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
+                else:
+                    asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
+                    self.collector.call('push_asset', self, asset_dict)
+            except Exception as exc:
+                raise ex.Error(str(exc))
 
     def print_asset(self, data):
         from utilities.render.forest import Forest
@@ -1146,10 +1201,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         head_node.add_column(Env.nodename, color.BOLD)
         head_node.add_column("Value", color.BOLD)
         head_node.add_column("Source", color.BOLD)
-        for key in sorted(data):
-            _data = data[key]
-            node = head_node.add_node()
-            if key not in ("targets", "lan", "uids", "gids", "hba", "hardware"):
+
+        if 'properties' in data:
+            for key in sorted(data["properties"]):
+                _data = data["properties"][key]
+                node = head_node.add_node()
                 if _data["value"] is None:
                     _data["value"] = ""
                 node.add_column(_data["title"], color.LIGHTBLUE)
@@ -2857,6 +2913,68 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             for chunk in iter(lambda: ufile.read(4096), b""):
                 ofile.write(chunk)
         ufile.close()
+
+    def collector_url(self, rpath):
+        return self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", rpath)
+
+    def collector_basic_node(self):
+        username, password = self.collector_auth_node()
+        return base64encode('%s:%s' % (username, password)).replace("\n", "")
+
+    def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, **kwargs):
+        """
+        Make a request to the collector's oc3 api and returns status code and json decoded response
+
+        it will raise if it can't decode http response, or can't get http status code
+
+        Returns:
+            tuple[status_code, data]: A tuple containing the http status code of
+            the response and the json decoded data.
+        """
+        if base_url is None:
+            url = self.collector_url(rpath)
+        else:
+            url = "%s%s" % (base_url, rpath)
+        if not url.startswith("https://"):
+            raise ex.Error("need https protocol, got %s" % url)
+
+        if headers is None:
+            headers = {"Accept": "application/json"}
+            if data is not None:
+                headers["Content-Type"] = "application/json"
+
+        request = Request(url, headers=headers)
+        request.get_method = lambda: method
+        request.add_header("Authorization", "Basic %s" % self.collector_basic_node())
+
+        if data is not None:
+            try:
+                request.add_data(json.dumps(data).encode('utf-8'))
+            except AttributeError:
+                request.data = json.dumps(data).encode('utf-8')
+
+        kwargs = {}
+        kwargs = self.set_ssl_context(kwargs)
+
+        def returns(ret_code, read_closer):
+            if ret_code == 204:
+                return ret_code, None
+            try:
+                ret_data = json.loads(read_closer.read().decode("utf-8"))
+                return ret_code, ret_data
+            except Exception as decode_err:
+                raise ex.Error("oc3 %s %s status code %d can't decode response: %s" %
+                           (method, url, ret_code, str(decode_err)))
+            finally:
+                read_closer.close()
+
+        try:
+            resp = urlopen(request, **kwargs)
+            return returns(resp.code, resp)
+        except HTTPError as err:
+            return returns(err.code, err)
+        except Exception as err:
+            raise ex.Error("oc3 %s %s error: %s" % (method, url, str(err)))
 
     def svc_conf_from_templ(self, name, namespace, kind, template):
         """
