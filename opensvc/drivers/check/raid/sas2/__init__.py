@@ -54,6 +54,7 @@ class Check(drivers.check.Check):
             ctrl = "ctrl:"+str(ix)
             slot=""
             chk_dsk = 0
+            enc = ""
             for line in lines:
                 if line.startswith('IR volume'):
                     chk_dsk = 2

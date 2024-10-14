@@ -18,6 +18,8 @@ if TERM:
     del os.environ["TERM"]
     import readline
     os.environ["TERM"] = TERM
+else:
+    import readline
 
 import atexit
 import fnmatch
@@ -1866,6 +1868,9 @@ class CmdRuleset(Cmd):
             t = "contextual"
         if options.explicit:
             t = "explicit"
+        else:
+            # impossible, keep for pylint
+            t = ""
         data = {
           "ruleset_type": t,
         }

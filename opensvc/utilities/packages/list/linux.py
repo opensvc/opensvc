@@ -27,6 +27,7 @@ def listpkg_snap():
     cmd = ["snap", "list", "--unicode=never", "--color=never"]
     out, err, ret = justcall(cmd)
     lines = []
+    header = namedtuple("", "")
     for line in out.splitlines():
         if line.startswith('Name'):
             header = namedtuple("header", line)
@@ -48,6 +49,7 @@ def listpkg_rpm():
     cmd = ['rpm', '-qai', '--queryformat=XX%{n} %{v}-%{r} %{arch} rpm %{installtime}\n']
     out, err, ret = justcall(cmd)
     lines = []
+    sig = ""
     for line in out.split('\n'):
         if line.startswith('Signature'):
             sig = line.split()[-1].strip()

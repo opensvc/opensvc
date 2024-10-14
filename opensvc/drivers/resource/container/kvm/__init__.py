@@ -317,6 +317,7 @@ class ContainerKvm(BaseContainer):
 
     def container_stop(self):
         state = self.dom_state()
+        cmd = []
         if state == "running":
             cmd = ['virsh', 'shutdown', self.name]
         elif state in ("blocked", "paused", "crashed"):

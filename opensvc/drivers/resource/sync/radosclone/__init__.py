@@ -85,6 +85,7 @@ class SyncRadosclone(SyncRadossnap):
 
     def validate_pair_fmt(self):
         l = []
+        image = ""
         for pair in self.pairs:
             try:
                 image, clone = pair.split(":")

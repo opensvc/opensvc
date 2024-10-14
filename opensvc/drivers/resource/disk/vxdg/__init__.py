@@ -67,6 +67,7 @@ class DiskVxdg(BaseDisk):
         if ret != 0:
             raise ex.Error(err)
         data = {}
+        headers = list()
         for line in out.splitlines():
             words = line.split()
             if len(words) < 7:
@@ -75,7 +76,7 @@ class DiskVxdg(BaseDisk):
                 headers = list(words)
                 continue
             line = namedtuple("line", headers)._make(words)
-            data[(line.TY, line.NAME)] = line
+            data[(getattr(line, "TY"), getattr(line, "NAME"))] = line
         return data
 
     def has_it(self):
@@ -172,6 +173,7 @@ class DiskVxdg(BaseDisk):
         if ret != 0:
             raise ex.Error(err)
         data = {}
+        headers = list()
         for line in out.splitlines():
             words = line.split(None, 4)
             if len(words) < 5:
@@ -180,9 +182,9 @@ class DiskVxdg(BaseDisk):
                 headers = list(words)
                 continue
             dev = namedtuple("dev", headers)._make(words)
-            if dev.GROUP != self.name and dev.GROUP != "(%s)"%self.name:
+            if getattr(dev, "GROUP") != self.name and getattr(dev, "GROUP") != "(%s)"%self.name:
                 continue
-            data[dev.DEVICE] = dev
+            data[getattr(dev, "DEVICE")] = dev
         return data
 
     def sub_devs(self):
