@@ -90,10 +90,10 @@ class SyncRadosclone(SyncRadossnap):
             try:
                 image, clone = pair.split(":")
             except:
-                l.append(image)
+                l.append(pair)
                 continue
             if image.count("/") != 1 or clone.count("/") != 1:
-                l.append(image)
+                l.append(pair)
         if len(l) > 0:
             raise ex.Error("wrong format (expected pool/image:pool/image): "+", ".join(l))
 
