@@ -37,6 +37,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "disk",
+        "at": True,
         "required": True,
         "provisioning": True,
         "text": "The path of the device to provision the drbd on."
@@ -51,6 +52,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "addr",
+        "at": True,
         "required": False,
         "provisioning": True,
         "text": "The addr to use to connect a peer. Use scoping to define "
@@ -59,6 +61,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "port",
+        "at": True,
         "required": False,
         "provisioning": True,
         "text": "The port to use to connect a peer. The default",
