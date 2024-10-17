@@ -3352,6 +3352,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if len(paths) != 1:
                 raise ex.Error("only one service must be specified")
             path = paths[0]
+        else:
+            raise ex.Error("create_path() accepts a list, got %s" % paths)
 
         try:
            path.encode("ascii")

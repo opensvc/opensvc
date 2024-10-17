@@ -166,8 +166,9 @@ class SyncEvasnap(Sync):
         if wwid in self._lun_info:
             return self._lun_info[wwid]
 
+        _wwid = wwid
+
         if '-' not in wwid:
-            _wwid = wwid
             wwid = self.convert_wwid(wwid)
 
         info = {

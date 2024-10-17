@@ -69,6 +69,9 @@ class DiskInfo(BaseDiskInfo):
         **  OR:
         *   188743612 accessible sectors
         """
+        n1 = 0
+        n2 = 0
+        n3 = 0
         for line in out.split('\n'):
             if not line.startswith('*'):
                 continue

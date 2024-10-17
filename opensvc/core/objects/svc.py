@@ -4705,6 +4705,7 @@ class Svc(PgMixin, BaseSvc):
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
         else:
+            from multiprocessing import Process
             from utilities.process_title import set_process_title
 
             def wrapper(proc_title, func):

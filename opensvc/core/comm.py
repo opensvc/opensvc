@@ -657,6 +657,7 @@ class Crypt(object):
         data.encrypted = False
         data.server = server
         data.af = socket.AF_INET
+        host = ""
 
         if server.startswith("https://"):
             host = server[8:]

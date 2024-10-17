@@ -83,9 +83,9 @@ class Mgr(object):
         env.update(os.environ)
         env["OSVC_DETACHED"] = "1"
         env["OSVC_PARENT_SESSION_UUID"] = Env.session_uuid
+        import signal
         try:
             import subprocess
-            import signal
             kwargs = {}
             try:
                 kwargs["preexec_fn"] = os.setsid

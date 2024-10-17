@@ -2343,9 +2343,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
             return
         if smon.status not in ("start failed", "place failed"):
             return
+        n_up = 0
+        flex_target = ""
         for nodename, instance in self.get_service_instances(path).items():
             if instance["monitor"].get("global_expect") is not None:
-                return True
+                return
+            flex_target = instance.get("flex_target")
+            if instance.get("avail") == "up":
+                n_up += 1
+        if flex_target and flex_target > n_up:
+            return
         self.log.info("clear %s %s: the service is up", path, smon.status)
         self.set_smon(path, status="idle")
 

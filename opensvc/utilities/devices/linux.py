@@ -287,7 +287,7 @@ def lv_info(self, device):
         lv_size = float(info[2].split('m')[0])
     else:
         self.log.error("%s output does not have the expected unit (m or M)"%' '.join(cmd))
-        ex.Error
+        raise ex.Error
     return (info[0], info[1], lv_size)
 
 def get_partition_parent(dev):

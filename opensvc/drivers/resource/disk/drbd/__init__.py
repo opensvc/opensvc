@@ -37,6 +37,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "disk",
+        "at": True,
         "required": True,
         "provisioning": True,
         "text": "The path of the device to provision the drbd on."
@@ -51,6 +52,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "addr",
+        "at": True,
         "required": False,
         "provisioning": True,
         "text": "The addr to use to connect a peer. Use scoping to define "
@@ -59,6 +61,7 @@ KEYWORDS = BASE_KEYWORDS + [
     },
     {
         "keyword": "port",
+        "at": True,
         "required": False,
         "provisioning": True,
         "text": "The port to use to connect a peer. The default",
@@ -348,12 +351,22 @@ class DiskDrbd(Resource):
                 raise ex.Error
 
     def start_connection(self):
+        """
+        see drbd_conn_state from https://github.com/LINBIT/drbd-headers/blob/master/linux/drbd.h
+        """
         cstate = self.get_cstate()
-        if cstate == "Connected":
-            self.log.info("drbd resource %s is already connected", self.res)
-        elif cstate == "Connecting":
-            self.log.info("drbd resource %s is already connecting", self.res)
+        transiant_to_connect = ["Unconnected", "Timeout", "BrokenPipe", "NetworkFailure", "ProtocolError", "TearDown"]
+        if cstate in ["Connecting", "Connected"]:
+            self.log.info("drbd resource %s is already %s", self.res, cstate)
+        elif cstate in transiant_to_connect:
+            self.log.info("drbd resource %s cstate is %s: wait for Connecting or Connected", self.res, cstate)
+            self.wait_for_cstate(["Connected", "Connecting"])
         elif cstate == "StandAlone":
+            self.drbdadm_down()
+            self.drbdadm_up()
+        elif cstate == "Disconnecting":
+            self.log.info("drbd resource %s cstate is %s: wait for StandAlone, to restart connection", self.res, cstate)
+            self.wait_for_cstate(["StandAlone"])
             self.drbdadm_down()
             self.drbdadm_up()
         elif cstate == "WFConnection":
@@ -484,6 +497,13 @@ class DiskDrbd(Resource):
                     return False
             return True
         self.wait_for_fn(check, 5, 1, errmsg="waited too long for a known remote dstate")
+
+    def wait_for_cstate(self, cstates):
+        def check():
+            cstate = self.get_cstate()
+            return cstate in cstates
+
+        self.wait_for_fn(check, 5, 1, errmsg="waited too long for cstate in %s" % cstates)
 
     def dstate_uptodate(self, dstates):
         for dstate in dstates:

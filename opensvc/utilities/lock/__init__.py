@@ -8,6 +8,7 @@ from __future__ import print_function
 import contextlib
 import json
 import os
+import sys
 import time
 
 import foreign.six as six
@@ -266,6 +267,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import sys
-
     sys.exit(main())

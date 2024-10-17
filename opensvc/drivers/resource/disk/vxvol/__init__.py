@@ -83,6 +83,7 @@ class DiskVxvol(BaseDisk):
         if ret != 0:
             raise ex.Error(err)
         data = {}
+        headers = list()
         for line in out.splitlines():
             words = line.split()
             if len(words) < 7:
@@ -91,7 +92,7 @@ class DiskVxvol(BaseDisk):
                 headers = list(words)
                 continue
             lv = namedtuple("lv", headers)._make(words)
-            data[lv.NAME] = lv
+            data[getattr(lv, "NAME")] = lv
         return data
 
     def has_it(self):

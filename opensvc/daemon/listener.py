@@ -409,8 +409,8 @@ class Listener(shared.OsvcThread):
             return
         for fd in fds[0]:
             sock = self.sockmap[fd]
+            conn = None
             try:
-                conn = None
                 conn, addr = sock.accept()
                 self.stats.sessions.accepted += 1
                 if fd == self.sockux.fileno():
@@ -937,8 +937,8 @@ class ClientHandler(shared.OsvcThread):
         )
 
     def run(self):
+        close = True
         try:
-            close = True
             self.parent.stats.sessions.alive[self.sid] = Storage({
                 "created": time.time(),
                 "addr": self.addr[0],
@@ -1156,6 +1156,8 @@ class ClientHandler(shared.OsvcThread):
             user = ""
         if self.addr:
             addr = self.addr[0]
+        else:
+            addr = ""
         return "%s@%s" % (user, addr)
 
     def prepare_response(self, stream_id, status, data, content_type="application/json", path=None):

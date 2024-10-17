@@ -60,7 +60,7 @@ def convert(s):
     except:
         pass
     try:
-        return unicode(s, errors="ignore")
+        return unicode(s, errors="ignore") # pylint: disable=unexpected-keyword-arg
     except:
         pass
     try:

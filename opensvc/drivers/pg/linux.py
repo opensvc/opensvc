@@ -134,14 +134,11 @@ def __set_cgroup(o, cgp, value, t, name, key, force=False):
     path = os.path.join(cgp, name)
     if not os.path.exists(path):
         raise ex.Error("can not find %s"%path)
-    if hasattr(o, "log"):
-        log = o.log
-    elif hasattr(o, "svc"):
-        log = o.svc.log
+    log = get_log(o)
     try:
         with open(path, 'w') as f:
             f.write(str(value))
-        log.info('/bin/echo %s > %s'%(value, path))
+        if log: log.info('/bin/echo %s > %s'%(value, path))
     except Exception:
         raise Exception("failed to set process group setting %s to %s" % (value, path))
 
@@ -214,10 +211,7 @@ def set_mem_cgroup(o):
     else:
         vmem_limit = None
 
-    if hasattr(o, "log"):
-        log = o.log
-    elif hasattr(o, "svc"):
-        log = o.svc.log
+    log = get_log(o)
 
     #
     # validate memory limits sanity and order adequately the resize
@@ -229,7 +223,7 @@ def set_mem_cgroup(o):
         cur_vmem_limit = None
     if mem_limit is not None and vmem_limit is not None:
         if mem_limit > vmem_limit:
-            log.error("pg_vmem_limit must be greater than pg_mem_limit")
+            if log: log.error("pg_vmem_limit must be greater than pg_mem_limit")
             raise ex.Error
         if cur_vmem_limit and mem_limit > cur_vmem_limit:
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
@@ -239,13 +233,13 @@ def set_mem_cgroup(o):
             set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
     elif mem_limit is not None:
         if cur_vmem_limit and mem_limit > cur_vmem_limit:
-            log.error("pg_mem_limit must not be greater than current pg_vmem_limit (%d)"%cur_vmem_limit)
+            if log: log.error("pg_mem_limit must not be greater than current pg_vmem_limit (%d)"%cur_vmem_limit)
             raise ex.Error
         set_cgroup(o, 'memory', 'memory.limit_in_bytes', 'mem_limit')
     elif vmem_limit is not None:
         cur_mem_limit = int(get_cgroup(o, 'memory', 'memory.limit_in_bytes'))
         if vmem_limit < cur_mem_limit:
-            log.error("pg_vmem_limit must not be lesser than current pg_mem_limit (%d)"%cur_mem_limit)
+            if log: log.error("pg_vmem_limit must not be lesser than current pg_mem_limit (%d)"%cur_mem_limit)
             raise ex.Error
         set_cgroup(o, 'memory', 'memory.memsw.limit_in_bytes', 'vmem_limit')
 
@@ -434,10 +428,7 @@ def freezer(o, a):
 
 def _freezer(o, a, cgp):
     path = os.path.join(cgp, "freezer.state")
-    if hasattr(o, "log"):
-        log = o.log
-    elif hasattr(o, "svc"):
-        log = o.svc.log
+    log = get_log(o)
     if not os.path.exists(path):
         raise ex.Error("freezer control file not found: %s"%path)
     try:
@@ -447,17 +438,17 @@ def _freezer(o, a, cgp):
         raise ex.Error(str(e))
     buff = buff.strip()
     if buff == a:
-        log.info("%s is already %s" % (path, a))
+        if log: log.info("%s is already %s" % (path, a))
         return
     elif buff == "FREEZING":
-        log.info("%s is currently FREEZING" % path)
+        if log: log.info("%s is currently FREEZING" % path)
         return
     try:
         with open(path, "w") as f:
             buff = f.write(a)
     except Exception as e:
         raise ex.Error(str(e))
-    log.info("%s on %s submitted successfully" % (a, path))
+    if log: log.info("%s on %s submitted successfully" % (a, path))
 
     # el6 kernel does not freeze child cgroups, as later kernels do
     for _cgp in glob.glob(cgp+"/*/*/freezer.state"):

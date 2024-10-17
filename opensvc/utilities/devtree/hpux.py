@@ -62,6 +62,7 @@ class DevTree(BaseDevTree):
                       /dev/disk/disk11      /dev/disk/disk11_p2   /dev/rdisk/disk11     /dev/rdisk/disk11_p2
                       /dev/disk/disk11_p1   /dev/disk/disk11_p3   /dev/rdisk/disk11_p1  /dev/rdisk/disk11_p3
         """
+        d = None
         for w in out.split():
             if not w.startswith('/dev/'):
                 new = True
@@ -131,6 +132,7 @@ Last Open or Close state      = ACTIVE
 
         # parser
         h = {}
+        size = 0
         for line in out.split('\n'):
             line = line.strip()
             if 'LV Size' in line:
@@ -158,6 +160,7 @@ Last Open or Close state      = ACTIVE
         cmd = ["vgdisplay", "-v"]
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         out, err = p.communicate()
+        vgname = ""
         for line in out.split('\n'):
             if 'VG Name' in line:
                 vgname = line.split()[-1].replace('/dev/','')

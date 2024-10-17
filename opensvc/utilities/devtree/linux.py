@@ -161,6 +161,7 @@ class DevTree(DevTreeVeritas, BaseDevTree):
         name = None
         paths = []
         mp_h = {}
+        did = ""
         for line in lines:
             if len(line) == 0:
                 # new mpath

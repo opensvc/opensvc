@@ -41,6 +41,9 @@ class BasePool(object):
     def oget(self, key, **kwargs):
         return self.node.oget(self.section, key, **kwargs)
 
+    def oget_scopes(self, key, **kwargs):
+        return self.node.oget_scopes(self.section, key, **kwargs)
+
     @lazy
     def fs_type(self):
         return self.oget("fs_type")

@@ -155,6 +155,7 @@ class ContainerSrp(BaseContainer):
         data = {}
 
         words = out.split()
+        service = ""
         for i, w in enumerate(words):
             if w == "Service:":
                 service = words[i+1]

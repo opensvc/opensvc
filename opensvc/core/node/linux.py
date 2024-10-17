@@ -3,6 +3,7 @@ import socket
 import time
 from itertools import islice
 
+import core.exceptions as ex
 import utilities.os.linux
 import utilities.ping
 from utilities.lazy import lazy
@@ -123,9 +124,12 @@ class Node(BaseNode):
                 cmd = ipcmd + ["route", "replace", dst, "via", gw, "table", table]
             elif dev is not None:
                 cmd = ipcmd + ["route", "replace", dst, "dev", dev, "table", table]
+            else:
+                raise ex.Error("network_route_add needs a gw or a dev kwarg")
             out, err, ret = justcall(cmd)
         else:
             err = ""
+            out = ""
         if tunnel == "never":
             self.log.info(" ".join(cmd))
             for line in out.splitlines():
