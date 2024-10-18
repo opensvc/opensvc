@@ -493,6 +493,9 @@ class OsvcThread(threading.Thread, Crypt):
                 # multiprocessing.Process()
                 ret = data.proc.exitcode
                 comm = lambda: None
+            else:
+                ret = None
+                comm = lambda: None
             if ret is not None:
                 comm()
                 done.append(idx)

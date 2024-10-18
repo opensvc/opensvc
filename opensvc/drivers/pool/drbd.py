@@ -28,6 +28,10 @@ class Pool(BasePool):
         return self.oget("network")
 
     @lazy
+    def addrs(self):
+        return self.oget_scopes("addr")
+
+    @lazy
     def path(self):
         return self.oget("path") or os.path.join(Env.paths.pathvar, "pool", self.name)
 
@@ -54,6 +58,9 @@ class Pool(BasePool):
             }
             if self.network:
                 disk["network"] = self.network
+            for nodename, v in self.addrs.items():
+                if v:
+                    disk["addr@"+nodename] = v
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)
@@ -78,6 +85,9 @@ class Pool(BasePool):
             }
             if self.network:
                 disk["network"] = self.network
+            for nodename, v in self.addrs.items():
+                if v:
+                    disk["addr@"+nodename] = v
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)
@@ -121,6 +131,9 @@ class Pool(BasePool):
             }
             if self.network:
                 disk["network"] = self.network
+            for nodename, v in self.addrs.items():
+                if v:
+                    disk["addr@"+nodename] = v
             if self.max_peers != 0:
                 disk["max_peers"] = self.max_peers
             data.append(disk)

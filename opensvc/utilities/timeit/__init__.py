@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import inspect
 import os
 import sys
 
@@ -8,7 +9,6 @@ TIMING_DATA = []
 
 if TIMING:
     import atexit
-    import inspect
     import json
     import time
 

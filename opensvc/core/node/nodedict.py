@@ -1216,6 +1216,15 @@ Arbitrators can be tested using :cmd:`om node ping --node <arbitrator name>`.
     },
     {
         "section": "pool",
+        "keyword": "addr",
+        "text": "The addr to use to connect a peer. Use scoping to define "
+                "each non-default address.",
+        "at": True,
+        "rtype": "drbd",
+        "default_text": "The ipaddr resolved for the nodename.",
+    },
+    {
+        "section": "pool",
         "keyword": "path",
         "rtype": "share",
         "default": "{var}/pool/share",

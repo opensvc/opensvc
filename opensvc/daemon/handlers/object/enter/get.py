@@ -71,7 +71,8 @@ class Handler(daemon.handler.BaseHandler):
             "--permit-write",
             "om", options.path, "enter", "--rid", options.rid,
         ]
-        env = dict(os.environ).update({
+        env = dict(os.environ)
+        env.update({
             "GOTTY_CREDENTIAL": creds,
         })
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)

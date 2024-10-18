@@ -208,6 +208,7 @@ class Asset(BaseAsset):
 
         hba_type = 'fc'
         for hba_name in hba_names:
+            hba_id = ''
             targets = []
             cmd = ['luxadm', '-e', 'dump_map', hba_name]
             out, err, ret = justcall(cmd)

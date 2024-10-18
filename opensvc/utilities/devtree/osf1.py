@@ -45,6 +45,7 @@ drivedata: 0
 """
         if ret != 0:
             return
+        bs = 0
         for line in out.split("\n"):
             if line.startswith("bytes/sector"):
                 bs = int(line.split()[-1])
