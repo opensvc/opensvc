@@ -19,6 +19,7 @@ Requires=opensvc-services.service
 [Service]
 Type=forking
 TimeoutStopSec=5m
+ExecStartPost=sleep 0.5
 ExecStart=/usr/share/opensvc/bin/om daemon start
 ExecStop=/usr/share/opensvc/bin/om daemon stop
 KillMode=process
