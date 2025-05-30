@@ -1504,7 +1504,43 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.print_push_disks(data)
         else:
             self.print_data(data)
-        self.collector.call('push_disks', data)
+
+        try:
+            if self.oc3_version() >= Semver(1, 0, 5):
+                api_path = "/oc3/feed/node/disk"
+                l = []
+                for disk_id, disk in data["disks"].items():
+                    for svcname, service in disk["services"].items():
+                        l.append({
+                            "id": disk_id,
+                            "object_path": svcname,
+                            "size": disk["size"],
+                            "used": service["used"],
+                            "vendor": disk["vendor"],
+                            "model": disk["model"],
+                            "dg": disk["dg"],
+                            "region": service["region"]
+                        })
+                    if disk["used"] < disk["size"]:
+                        l.append({
+                            "id": disk_id,
+                            "object_path": "",
+                            "size": disk["size"],
+                            "used": disk["size"] - disk["used"],
+                            "vendor": disk["vendor"],
+                            "model": disk["model"],
+                            "dg": disk["dg"],
+                            "region": "0"
+                        })
+                status_code, _ = self.collector_oc3_request("POST", api_path, data={"data": l})
+                if status_code != 202:
+                    raise ex.Error("POST %s unexpected status code: %d" % (api_path, status_code))
+                # TODO: ensure "served_disks" from data is not anymore used
+            else:
+                self.collector.call('push_disks', data)
+        except Exception as exc:
+            raise ex.Error(str(exc))
+
 
     def print_push_disks(self, data):
         from utilities.render.forest import Forest
