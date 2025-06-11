@@ -414,6 +414,14 @@ KEYWORDS = [
     },
     {
         "section": "node",
+        "keyword": "db_oc3",
+        "convert": "boolean",
+        "default": False,
+        "text": "When set to true, OpenSVC Collector 3 calls are enabled if Collector 3 is detected."
+                " By default, this is set to false, so the calls are disabled even when Collector 3 is detected."
+    },
+    {
+        "section": "node",
         "keyword": "dbcompliance",
         "example": "https://collector.opensvc.com/init/compliance/call/xmlrpc",
         "default_text": "Same protocol, server and port as dbopensvc, but with an different path.",

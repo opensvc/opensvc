@@ -477,6 +477,8 @@ class Collector(shared.OsvcThread):
         null_version = Semver(0, 0, 0)
         version = shared.NODE.oc3_version()
         try:
+            if not shared.NODE.oget("node", "db_oc3"):
+                return null_version
             status_code, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
             if status_code == 200:
                 if isinstance(schema, dict):
