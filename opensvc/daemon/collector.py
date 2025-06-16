@@ -3,14 +3,15 @@ Collector Thread
 """
 import json
 import os
-import sys
 import logging
 import time
+from copy import deepcopy
 
 import daemon.shared as shared
 from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import svc_pathvar, split_path
+from utilities.rfc3339 import RFC3339
 from utilities.semver import Semver
 
 MAX_QUEUED = 1000
@@ -379,6 +380,7 @@ class Collector(shared.OsvcThread):
         if "monitor" not in shared.THREADS:
             # the monitor thread is not started
             return
+        rfc3339 = RFC3339()
         data = self.daemon_status_data.get_copy(["monitor"])
         _data = {
             "cluster_id": self.cluster_id,
@@ -422,6 +424,15 @@ class Collector(shared.OsvcThread):
                 _data["nodes"][nodename]["frozen"] = node_frozen
                 _data["nodes"][nodename]["services"]["status"][path] = instances_status[path]
                 _data["nodes"][nodename]["services"]["config"][path] = instances_config[path]
+
+                # Prepare hb with peers last_at with rfc3339 format
+                v = deepcopy(data["nodes"][nodename]["hb"])
+                for hb_id, v2 in v.items():
+                    for peer_name, peer_value in v2["peers"].items():
+                        if "last" in peer_value:
+                            v[hb_id]["peers"][peer_name]["last_at"] = rfc3339.from_epoch(peer_value["last"])
+                _data["nodes"][nodename]["hb"] = v
+
                 _data["services"][path] = data["services"][path]
         return _data
 
