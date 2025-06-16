@@ -384,6 +384,8 @@ class OsvcThread(threading.Thread, Crypt):
             new_state = "terminated"
         try:
             self.thread_data.set(["state"], new_state)
+            if getattr(self, "id", "").startswith("hb#"):
+                self.node_data.set(["hb", self.name, "state"], new_state)
         except KeyError:
             pass
         self.log.info('thread exits with code %d', exit_status)

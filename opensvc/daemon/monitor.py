@@ -720,11 +720,11 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 "status": {},
                 "config": {},
             },
-            "gen": {
-            },
+            "gen": {},
             "config": {
                 "csum": shared.NODE.nodeconf_csum(),
             },
+            "hb": {},
         }
         self.node_data.set([], initial_data)
         for nodename in self.cluster_nodes:

@@ -3,6 +3,7 @@
 """
 import logging
 import time
+from copy import deepcopy
 
 import daemon.shared as shared
 import core.exceptions as ex
@@ -17,6 +18,10 @@ class Hb(shared.OsvcThread):
     interval = 5
     timeout = None
 
+    # publish interval in seconds is the minimum interval between
+    # 2 publications of node data heartbeat id statistics.
+    publish_interval = 5 * 60
+
     def __init__(self, name, role=None):
         shared.OsvcThread.__init__(self)
         self.name = name
@@ -28,6 +33,11 @@ class Hb(shared.OsvcThread):
         self.hb_nodes = []
         self.get_hb_nodes()
         self.msg_type = None
+
+        # has_changes bool is defined for early publication of
+        # node data heartbeat statistic.
+        self.has_changes = True
+        self.last_published = time.time()
 
     def get_hb_nodes(self):
         try:
@@ -74,6 +84,11 @@ class Hb(shared.OsvcThread):
                 "last": _data.last,
                 "beating": _data.beating if running else False,
             }
+        if self.has_changes or time.time() - self.last_published > self.publish_interval:
+            self.node_data.set(["hb", self.id], deepcopy(data))
+            self.has_changes = False
+            self.last_published = time.time()
+
         return data
 
     def set_last(self, nodename="*", success=True):
@@ -91,6 +106,7 @@ class Hb(shared.OsvcThread):
                     "hb": {"name": self.name, "id": self.id},
                 })
                 self.peers[nodename].beating = True
+                self.has_changes = True
         self.peers[nodename].success = success
 
     def get_last(self, nodename="*"):
@@ -124,6 +140,7 @@ class Hb(shared.OsvcThread):
         change = False
         if self.peers[nodename].beating != beating:
             change = True
+            self.has_changes = True
             if beating:
                 self.event("hb_beating", data={
                     "nodename": nodename,
