@@ -97,13 +97,28 @@ class Collector(shared.OsvcThread):
                 if data["nodes"].get(nodename, {}).get("services", {}).get("status", {}).get(path) is None:
                     last_status_changed |= set([path, path+"@"+nodename])
 
+
+        def hb_state_signature(node_hb_data):
+            return " ".join(
+                [
+                    ",".join(
+                        [
+                            "%s:%s:%s:%s" % (hb_id, hb_data.get("state", ""), peer_name, peer_data.get("beating", ""))
+                            for peer_name, peer_data in hb_data.get("peers", {}).items()
+                        ])
+                    for hb_id, hb_data in node_hb_data.items()
+                ]
+            )
+
         for nodename, ndata in data["nodes"].items():
-            # detect node frozen changes
+            # detect node frozen, or hb changes
             node_frozen = ndata.get("frozen")
-            last_node_frozen = self.last_status.get((None, nodename), {}).get("frozen")
-            if node_frozen != last_node_frozen:
+            node_hb = hb_state_signature(ndata.get("hb", {}))
+            last_node_frozen = self.last_status.get((None, nodename), {"frozen": 0}).get("frozen", 0)
+            last_node_hb = self.last_status.get((None, nodename), {"hb": ""}).get("hb", "")
+            if node_frozen != last_node_frozen or node_hb != last_node_hb:
                 last_status_changed.add("@"+nodename)
-            last_status[(None, nodename)] = {"frozen": node_frozen}
+            last_status[(None, nodename)] = {"frozen": node_frozen, "hb": node_hb}
 
             # detect instances status changes
             for path, sdata in ndata.get("services", {}).get("status", {}).items():
