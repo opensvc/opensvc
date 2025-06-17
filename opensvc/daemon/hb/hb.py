@@ -9,7 +9,9 @@ import daemon.shared as shared
 import core.exceptions as ex
 import utilities.ifconfig
 from env import Env
+from utilities.rfc3339 import RFC3339
 from utilities.storage import Storage
+
 
 class Hb(shared.OsvcThread):
     """
@@ -27,7 +29,8 @@ class Hb(shared.OsvcThread):
         self.name = name
         self.id = name + "." + role
         self.thread_data = self.daemon_status_data.view([self.id])
-        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename+".osvcd."+self.id), {"node": Env.nodename, "component": self.id})
+        self.log = logging.LoggerAdapter(logging.getLogger(Env.nodename + ".osvcd." + self.id),
+                                         {"node": Env.nodename, "component": self.id})
         self.peers = {}
         self.reset_stats()
         self.hb_nodes = []
@@ -77,11 +80,13 @@ class Hb(shared.OsvcThread):
             else:
                 _data = self.peers.get(nodename, Storage({
                     "last": 0,
+                    "last_at": RFC3339().from_epoch(0),
                     "beating": False,
                     "success": True,
                 }))
             data["peers"][nodename] = {
                 "last": _data.last,
+                "last_at": RFC3339().from_epoch(_data.last),
                 "beating": _data.beating if running else False,
             }
         if self.has_changes or time.time() - self.last_published > self.publish_interval:
@@ -95,6 +100,7 @@ class Hb(shared.OsvcThread):
         if nodename not in self.peers:
             self.peers[nodename] = Storage({
                 "last": 0,
+                "last_at": RFC3339().from_epoch(0),
                 "beating": False,
                 "success": True,
             })
@@ -114,6 +120,7 @@ class Hb(shared.OsvcThread):
             return self.peers[nodename]
         return Storage({
             "last": 0,
+            "last_at": RFC3339().from_epoch(0),
             "beating": False,
             "success": True,
         })
@@ -130,6 +137,7 @@ class Hb(shared.OsvcThread):
         if nodename not in self.peers:
             self.peers[nodename] = Storage({
                 "last": 0,
+                "last_at": RFC3339().from_epoch(0),
                 "beating": False,
                 "success": True,
             })
@@ -154,6 +162,7 @@ class Hb(shared.OsvcThread):
                         "timeout": self.timeout,
                         "interval": self.interval,
                         "last": self.peers[nodename].last,
+                        "last_at": RFC3339().from_epoch(self.peers[nodename].last),
                     },
                 }, level="warning")
             self.peers[nodename].beating = beating
@@ -187,7 +196,7 @@ class Hb(shared.OsvcThread):
                 "compat": shared.COMPAT_VERSION,
                 "gen": self.get_gen(),
                 "monitor": self.get_node_monitor(),
-                "updated": time.time(), # for hb and relay readers
+                "updated": time.time(),  # for hb and relay readers
             }, encode=False)
             return message, len(message) if message else 0
         if begin == 0 or begin > shared.GEN:
@@ -210,7 +219,7 @@ class Hb(shared.OsvcThread):
                     shared.HB_MSG_LEN = len(shared.HB_MSG)
                 return shared.HB_MSG, shared.HB_MSG_LEN
         else:
-            self.log.debug("send gen %d-%d deltas to %s", begin, shared.GEN, nodename if nodename else "*") # COMMENT
+            self.log.debug("send gen %d-%d deltas to %s", begin, shared.GEN, nodename if nodename else "*")  # COMMENT
             if self.msg_type != 'patch':
                 self.msg_type = 'patch'
                 self.log.info('change message type to %s (gen %s)', self.msg_type, shared.GEN)
@@ -230,7 +239,7 @@ class Hb(shared.OsvcThread):
                 "kind": "patch",
                 "deltas": data,
                 "gen": self.get_gen(),
-                "updated": time.time(), # for hb and relay readers
+                "updated": time.time(),  # for hb and relay readers
             }, encode=False)
             return message, len(message) if message else 0
 
