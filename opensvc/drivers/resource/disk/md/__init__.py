@@ -67,6 +67,12 @@ KEYWORDS = BASE_KEYWORDS + [
         "example": "internal",
         "text": "'none' disables the write-intent bitmap, 'internal' writes the bitmap on the md legs, a file path may write the bitmap to a file (deprecated upstream)."
     },
+    {
+        "keyword": "devname",
+        "example": "ns1.svcname.disk.rindex1",
+        "default": None,
+        "text": "define custom md device name, otherwise the default is <namespace>.<svcname>.disk.<rindex>, or <svcname>.disk.<rindex> if no namespace is defined",
+    },
 ]
 
 KEYS.register_driver(
@@ -96,6 +102,7 @@ def justcall_md_create(*args, **kwargs):
 
 class DiskMd(BaseDisk):
     startup_timeout = 10
+    DEVICE_NAME_MAX_LENGTH = 32
 
     def __init__(self,
                  name=None,
@@ -106,6 +113,7 @@ class DiskMd(BaseDisk):
                  chunk=None,
                  layout=None,
                  bitmap=None,
+                 devname=None,
                  **kwargs):
         self.uuid = uuid
         self.level = level
@@ -114,6 +122,7 @@ class DiskMd(BaseDisk):
         self.chunk = chunk
         self.layout = layout
         self.bitmap = bitmap
+        self._devname = devname
         self.mdadm = "/sbin/mdadm"
         super(DiskMd, self).__init__(name=uuid, type='disk.md', **kwargs)
         if uuid:
@@ -242,10 +251,13 @@ class DiskMd(BaseDisk):
         raise ex.Error("unable to find a devpath for md")
 
     def devname(self):
-        if self.svc.namespace:
+        if self._devname:
+            return "/dev/md/"+self._devname
+        elif self.svc.namespace:
             return "/dev/md/"+self.svc.namespace.lower()+"."+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
         else:
             return "/dev/md/"+self.svc.name.split(".")[0]+"."+self.rid.replace("#", ".")
+
 
     def posix_devpath(self):
         # mdadm starts refusing "/dev/by-id/md-uuid-*" names as non-POSIX circa v4.3 (ubuntu 2404)
@@ -580,5 +592,5 @@ class DiskMd(BaseDisk):
 
     def _invalid_devname(self):
         md_name = os.path.basename(self.devname())
-        if len(md_name) >= 32:
-            return "device md name is too long, 32 chars max (name is %s)" % md_name
+        if len(md_name) >= self.DEVICE_NAME_MAX_LENGTH:
+            return "device md name is too long, %d chars max (name is %s)" % (self.DEVICE_NAME_MAX_LENGTH, md_name)

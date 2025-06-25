@@ -319,3 +319,25 @@ class TestDiskMdExposedDevs:
         has_files(['/dev/disk/by-id/md-uuid-s-uuid'])
         mocker.patch(LIB_NAME + '.os.path.realpath', side_effect=lambda x: x)
         assert md_with_uuid.exposed_devs() == set(['/dev/disk/by-id/md-uuid-s-uuid'])
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+@pytest.mark.usefixtures('has_mdadm')
+class TestDiskMdDevname:
+    @staticmethod
+    def test_default_devname_when_namespace_is_defined(mdadm_create, mdadm_detail, md):
+        md.svc.namespace = 'ns1'
+        md.svc.name = 'foo'
+        md.rid = "disk#idx1"
+        assert md.devname() == "/dev/md/ns1.foo.disk.idx1"
+
+    @staticmethod
+    def test_default_devname_when_no_namespace(mdadm_create, mdadm_detail, md):
+        md.svc.name = 'foo'
+        md.rid = "disk#idx1"
+        assert md.devname() == "/dev/md/foo.disk.idx1"
+
+    @staticmethod
+    def test_custom_devname(mdadm_create, mdadm_detail, md):
+        md._devname = "abcd"
+        assert md.devname() == "/dev/md/abcd"
