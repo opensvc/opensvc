@@ -3932,7 +3932,7 @@ class Svc(PgMixin, BaseSvc):
                 if resource.monitor:
                     _data["monitor"] = resource.monitor
                 if resource.nb_restart:
-                    _data["restart"] = resource.nb_restart
+                    _data["restart"] = 0 if resource.stopped() else resource.nb_restart
                 if len(log) > 0:
                     _data["log"] = log
                 if len(info) > 0:

@@ -152,6 +152,39 @@ class Resource(object):
             os.makedirs(var_d)
         return var_d
 
+    @lazy
+    def stopped_flag(self):
+        """ 
+        transcient stopped state file path
+        """
+        return os.path.join(self.var_d, "stopped")
+
+    def stopped(self):
+        """
+        Return True if the resource has been stopped.
+        """
+        return os.path.exists(self.stopped_flag)
+
+    def stopped_info(self):
+        """
+        status info for the stopped state
+        """
+        if self.stopped():
+            self.log.debug("resource %s is stopped", self.rid)
+            self.status_log("stopped", "info")
+
+    def set_stopped(self, stopped=True):
+        """
+        Set the stopped state file of the resource.
+        """
+        try:
+            if stopped:
+                return open(self.stopped_flag, "w").close()
+            if self.stopped():
+                return os.unlink(self.stopped_flag)
+        except:
+            pass
+
     def set_logger(self, log):
         """
         Set the <log> logger as the resource logger, in place of the default
@@ -926,8 +959,9 @@ class Resource(object):
     def boot(self):
         """
         Clean up actions to do on node boot before the daemon starts.
+        Remove transcient files, reset the stopped state.
         """
-        pass
+        self.set_stopped(False)
 
     def shutdown(self):
         """

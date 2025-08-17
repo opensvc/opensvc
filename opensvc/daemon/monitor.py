@@ -1521,9 +1521,12 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
                 return False
             if smon.local_expect != "started":
                 return False
+            res = svc.get_resource(rid, with_encap=True)
             try:
-                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+                nb_restart = res.nb_restart
             except AttributeError:
+                nb_restart = 0
+            if res.stopped():
                 nb_restart = 0
             retries = self.get_smon_retries(svc.path, rid)
 
@@ -1582,13 +1585,16 @@ class Monitor(shared.OsvcThread, MonitorObjectOrchestratorManualMixin):
         def stdby_resource(svc, rid, resource):
             if resource.get("standby") is not True:
                 return False
+            res = svc.get_resource(rid, with_encap=True)
             try:
-                nb_restart = svc.get_resource(rid, with_encap=True).nb_restart
+                nb_restart = res.nb_restart
                 if nb_restart < self.default_stdby_nb_restart:
                     nb_restart = self.default_stdby_nb_restart
             except AttributeError:
                 nb_restart = self.default_stdby_nb_restart
 
+            if res.stopped():
+                nb_restart = 0
             retries = self.get_smon_retries(svc.path, rid)
             if retries > nb_restart:
                 return False

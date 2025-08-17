@@ -353,6 +353,7 @@ class App(Resource):
             self.status_log(str(exc), "warn")
             raise StatusNA
         ret = self.run("status", cmd, dedicated_log=False)
+        self.stopped_info() # status_log info stopped state
         return ret
 
     def _info(self):
@@ -429,6 +430,7 @@ class App(Resource):
         Start the resource.
         """
         self.create_pg()
+        self.set_stopped(False)
 
         try:
             cmd = self.get_cmd("start")
@@ -476,6 +478,12 @@ class App(Resource):
             if "does not exist" in str(exc):
                 return
             raise
+
+        # avoid automatic restart if stop on scoped resources
+        if self.svc.command_is_scoped() and (self.nb_restart > 0 or self.is_standby):
+            self.set_stopped(True)
+        else:
+            self.set_stopped(False)
 
         status = self.status()
         if status == core.status.DOWN:
