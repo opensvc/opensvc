@@ -4904,6 +4904,42 @@ class Svc(PgMixin, BaseSvc):
             return
         self.print_status_data(mon_data=False, refresh=True)
 
+    def oc3_instance_resource_info_body(self):
+        """
+        Returns the body to POST oc3 instance resource info
+        """
+        data = {
+            "path": self.path,
+            "topology": self.topology,
+        }
+        info = []
+        for res in self.get_resources():
+            keys = []
+            try:
+                _data = res.info()
+            except Exception as exc:
+                _data = []
+                import traceback
+                traceback.print_exc()
+            for __data in _data:
+                keys.append({"key": __data[-2], "value": __data[-1]})
+            if len(keys) > 0:
+                info.append({"rid": res.rid, "keys": keys})
+
+        if "env" in self.cd:
+            keys = []
+            for key in self.cd["env"]:
+                try:
+                    val = self.conf_get("env", key)
+                except ex.OptNotFound as exc:
+                    continue
+                keys.append({"key": key if key is not None else "", "value": val if val is not None else ""})
+            if len(keys) > 0:
+                info.append({"rid": "env", "keys": keys})
+
+        data["info"] = info
+        return data
+
     def resinfo(self):
         """
         Return a list of (key, val) for each service resource and
@@ -5006,7 +5042,19 @@ class Svc(PgMixin, BaseSvc):
         The 'push_resinfo' scheduler task and action entrypoint.
         Push the per-resource key/value pairs to the collector.
         """
-        return self._push_resinfo(sync=self.options.syncrpc)
+        if self.node.oc3_version() >= Semver(1, 0, 6):
+            oc3_path = "/oc3/feed/instance/resource_info"
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            self.log.info("POST %s", oc3_path)
+            try:
+                data = self.oc3_instance_resource_info_body()
+                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                if status_code != 202:
+                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+            except Exception as exc:
+                raise ex.Error(str(exc))
+        else:
+            return self._push_resinfo(sync=self.options.syncrpc)
 
     def _push_resinfo(self, sync=False):
         """
