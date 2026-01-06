@@ -54,7 +54,7 @@ class Collector(shared.OsvcThread):
                 self.update_status()
                 interval_signature = "%d-%d-%d" % (self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
                 if interval_signature != previous_interval_signature:
-                    self.log.info("collector thread config: update_interval=%d, min_update_interval=%d, min_ping_interval= %d",
+                    self.log.info("collector thread config: update_interval=%d, min_update_interval=%d, min_ping_interval=%d",
                                   self.db_update_interval, self.db_min_update_interval, self.db_min_ping_interval)
                     previous_interval_signature = interval_signature
             except Exception as exc:
