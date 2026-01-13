@@ -5016,7 +5016,28 @@ class Svc(PgMixin, BaseSvc):
         Push the service instance status to the collector synchronously.
         Usually done asynchronously and automatically by the collector thread.
         """
-        self.node.collector.call('push_status', self.path, self.print_status_data(mon_data=False, refresh=True))
+        if self.node.oc3_version() >= Semver(1, 0, 7):
+            oc3_path = "/oc3/feed/instance/status?sync=true"
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            self.log.info("POST %s", oc3_path)
+            try:
+                data = {
+                    "path": self.path,
+                    "version": "2.1",
+                    "data": self.print_status_data(mon_data=False, refresh=True)
+                }
+                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data,
+                                                                             headers=headers)
+                if status_code == 200:
+                    return None
+                elif status_code == 202:
+                    self.log.info("POST %s accepted but not yet processed", oc3_path)
+                else:
+                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+            except Exception as exc:
+                raise ex.Error(str(exc))
+        else:
+            self.node.collector.call('push_status', self.path, self.print_status_data(mon_data=False, refresh=True))
 
     def push_config(self):
         """
