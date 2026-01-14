@@ -1133,7 +1133,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             print("Pushing %d packages information." % n)
 
-        if self.oc3_version() >= Semver(1, 0, 1):
+        if self.oc3_version() >= Semver(1, 0, 8):
             from utilities.rfc3339 import RFC3339
 
             rfc3339 = RFC3339()
@@ -1152,9 +1152,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pkg["sig"] = l[6]
                 return pkg
             body = {"package": [to_pkg_dict(l) for l in pkgs]}
-            status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=body)
+            status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/node/system", data=body)
             if status_code != 202:
-                raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
+                raise ex.Error("POST /oc3/feed/node/system unexpected status code: %d" % status_code)
         else:
             self.collector.call('push_pkg', pkgs)
 
@@ -1178,15 +1178,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             self.print_data(system_dict)
         finally:
             try:
-                if self.oc3_version() >= Semver(1, 0, 2):
+                if self.oc3_version() >= Semver(1, 0, 8):
                     from utilities.rfc3339 import RFC3339
 
                     if "last_boot" in system_dict.get("properties", {}):
                         last_boot = system_dict["properties"]["last_boot"]["value"]
                         system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
-                    status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/system", data=system_dict)
+                    status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/node/system", data=system_dict)
                     if status_code != 202:
-                        raise ex.Error("POST /oc3/feed/system unexpected status code: %d" % status_code)
+                        raise ex.Error("POST /oc3/feed/node/system unexpected status code: %d" % status_code)
                 else:
                     asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
                     self.collector.call('push_asset', self, asset_dict)
