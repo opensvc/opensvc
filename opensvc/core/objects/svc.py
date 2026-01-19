@@ -1320,17 +1320,92 @@ class BaseSvc(Crypt, ExtConfigMixin):
         except ex.Error:
             self.log.error("rollback %s failed", action)
 
-    def dblogger(self, action, begin, end, actionlogfile, err):
+    def push_begin_action(self, action, argv, begin):
+        if self.node.oc3_version() >= Semver(1, 0, 10):
+            oc3_path = "/oc3/feed/instance/action"
+            oc3_method = "POST"
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            self.log.debug("%s %s", oc3_method, oc3_path)
+            try:
+                data = {
+                    "path": self.path,
+                    "action": action,
+                    "argv": argv,
+                    "begin": begin,
+                    "cron": self.options.cron,
+                    "session_uuid": Env.session_uuid,
+                    "version": self.node.agent_version,
+                }
+                status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
+                                                                             headers=headers)
+                if status_code == 202:
+                    self.log.debug("%s %s accepted", oc3_method, oc3_path)
+                else:
+                    raise ex.Error("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
+            except Exception as exc:
+                raise ex.Error(str(exc))
+        else:
+            self.node.daemon_collector_xmlrpc("begin_action", self.path,
+                                              action, self.node.agent_version,
+                                              begin, self.options.cron, Env.session_uuid,
+                                              argv)
+
+    def push_end_action(self, action, argv, begin, end, err, logfile):
         """
         Send to the collector the service status after an action, and
         the action log.
         """
-        try:
-            self.node.daemon_collector_xmlrpc("end_action", self.path, action,
-                                              begin, end, self.options.cron, Env.session_uuid,
-                                              actionlogfile, err)
-        except Exception as exc:
-            self.log.warning("failed to send logs to the collector: %s", exc)
+        if self.node.oc3_version() >= Semver(1, 0, 10):
+            oc3_path = "/oc3/feed/instance/action"
+            oc3_method = "PUT"
+            headers = {"Accept": "application/json", "Content-Type": "application/json"}
+            self.log.debug("%s %s", oc3_method, oc3_path)
+            try:
+                status = "ok"
+                if err != 0:
+                    status = "err"
+
+                log_contents = ""
+                try:
+                    with open(logfile, "r") as file:
+                        log_contents = file.read()
+                except:
+                    pass
+
+                data = {
+                    "path": self.path,
+                    "action": action,
+                    "argv": argv,
+                    "begin": begin,
+                    "end": end,
+                    "status": status,
+                    "status_log": log_contents,
+                    "cron": self.options.cron,
+                    "session_uuid": Env.session_uuid,
+                    "version": self.node.agent_version,
+                }
+                # TODO: add timeout
+                status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
+                                                                             headers=headers)
+                if status_code == 202:
+                    self.log.debug("%s %s accepted", oc3_method, oc3_path)
+                    os.unlink(logfile)
+                else:
+                    self.log.debug("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
+                    raise ex.Error(
+                        "%s %s unexpected status code %d" % (oc3_method, oc3_path, status_code))
+            except Exception as exc:
+                # TODO: cleanup or add a retry mechanism here
+                self.log.debug(
+                    "%s %s unexpected error: %s" % (oc3_method, oc3_path, str(exc)))
+                pass
+        else:
+            try:
+                self.node.daemon_collector_xmlrpc("end_action", self.path, action,
+                                                  begin, end, self.options.cron, Env.session_uuid,
+                                                  logfile, err)
+            except Exception as exc:
+                self.log.warning("failed to send logs to the collector: %s", exc)
 
         try:
             logging.shutdown()
@@ -1352,10 +1427,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             if has_option("--value", argv):
                 drop_option("--value", argv, drop_value=True)
                 argv.append("--value=xxx")
-            self.node.daemon_collector_xmlrpc("begin_action", self.path,
-                                              action, self.node.agent_version,
-                                              begin, self.options.cron, Env.session_uuid,
-                                              argv)
+            self.push_begin_action(action, argv, begin)
         except Exception as exc:
             self.log.warning("failed to init logs on the collector: %s", exc)
             self.log_action_header(action, options)
@@ -1366,7 +1438,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                               prefix=self.name+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
-        fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
+        if self.node.oc3_version() >= Semver(1, 0, 10):
+            fmt = "%(asctime)s %(levelname)s [%(process)d] %(message)s"
+        else:
+            fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
         actionlogformatter = logging.Formatter(fmt)
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
@@ -1380,7 +1455,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.close()
         self.logger.removeHandler(actionlogfilehandler)
         end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.dblogger(action, begin, end, actionlogfile, err)
+        self.push_end_action(action, argv, begin, end, err, actionlogfile)
         return err
 
     def log_action_obfuscate_secret(self, options):
