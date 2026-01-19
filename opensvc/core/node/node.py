@@ -2958,7 +2958,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         username, password = self.collector_auth_node()
         return base64encode('%s:%s' % (username, password)).replace("\n", "")
 
-    def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, **kwargs):
+    def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, timeout=None, **kwargs):
         """
         Make a request to the collector's oc3 api and returns status code and json decoded response
 
@@ -2992,6 +2992,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         kwargs = {}
         kwargs = self.set_ssl_context(kwargs)
+        if timeout is not None:
+            kwargs["timeout"] = timeout
 
         def returns(ret_code, read_closer):
             if ret_code == 204:

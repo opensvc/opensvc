@@ -1337,7 +1337,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "version": self.node.agent_version,
                 }
                 status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
-                                                                             headers=headers)
+                                                                             headers=headers, timeout=1)
                 if status_code == 202:
                     self.log.debug("%s %s accepted", oc3_method, oc3_path)
                 else:
@@ -1384,9 +1384,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "session_uuid": Env.session_uuid,
                     "version": self.node.agent_version,
                 }
-                # TODO: add timeout
                 status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
-                                                                             headers=headers)
+                                                                             headers=headers, timeout=1)
                 if status_code == 202:
                     self.log.debug("%s %s accepted", oc3_method, oc3_path)
                     os.unlink(logfile)
