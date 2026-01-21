@@ -1,5 +1,6 @@
+import logging
 import time
-import datetime
+from datetime import datetime
 
 
 class RFC3339(object):
@@ -12,4 +13,12 @@ class RFC3339(object):
         self.format = iso_format + timezone_offset[0:3]+":"+timezone_offset[3:]
 
     def from_epoch(self, t):
-        return datetime.datetime.fromtimestamp(t).strftime(self.format)
+        return datetime.fromtimestamp(t).strftime(self.format)
+
+
+class RFC3339Formatter(logging.Formatter):
+    local_tz = datetime.now().astimezone().tzinfo
+
+    def formatTime(self, record, datefmt=None):
+        dt = datetime.fromtimestamp(record.created, tz=self.local_tz)
+        return dt.isoformat(timespec='microseconds')

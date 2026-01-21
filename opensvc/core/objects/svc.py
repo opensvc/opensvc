@@ -39,7 +39,7 @@ from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
                               svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory, split_path)
 from utilities.proc import (action_triggers, drop_option, has_option, find_editor,
                             init_locale, justcall, lcall, vcall)
-from utilities.rfc3339 import RFC3339
+from utilities.rfc3339 import RFC3339, RFC3339Formatter
 from utilities.semver import Semver
 from utilities.storage import Storage
 from utilities.string import is_string
@@ -1322,7 +1322,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.log.error("rollback %s failed", action)
 
     def push_begin_action(self, action, argv, begin):
-        if self.node.oc3_version() >= Semver(1, 0, 10):
+        if self.node.oc3_version() >= Semver(1, 0, 11):
             oc3_path = "/oc3/feed/instance/action"
             oc3_method = "POST"
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
@@ -1356,7 +1356,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Send to the collector the service status after an action, and
         the action log.
         """
-        if self.node.oc3_version() >= Semver(1, 0, 10):
+        if self.node.oc3_version() >= Semver(1, 0, 11):
             oc3_path = "/oc3/feed/instance/action"
             oc3_method = "PUT"
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
@@ -1439,11 +1439,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                               prefix=self.name+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
-        if self.node.oc3_version() >= Semver(1, 0, 10):
+        if self.node.oc3_version() >= Semver(1, 0, 11):
             fmt = "%(asctime)s %(levelname)s [%(process)d] %(message)s"
+            actionlogformatter = RFC3339Formatter(fmt)
         else:
             fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
-        actionlogformatter = logging.Formatter(fmt)
+            actionlogformatter = logging.Formatter(fmt)
+
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
         actionlogfilehandler.setLevel(logging.INFO)
