@@ -39,6 +39,7 @@ from utilities.naming import (fmt_path, resolve_path, svc_pathcf, svc_pathetc,
                               svc_pathlog, svc_pathtmp, svc_pathvar, new_id, factory, split_path)
 from utilities.proc import (action_triggers, drop_option, has_option, find_editor,
                             init_locale, justcall, lcall, vcall)
+from utilities.rfc3339 import RFC3339
 from utilities.semver import Semver
 from utilities.storage import Storage
 from utilities.string import is_string
@@ -1418,7 +1419,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         Do the action.
         Finally, feed the log to the collector.
         """
-        begin = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        rfc_time = RFC3339()
+        begin = rfc_time.from_epoch(time.time())
 
         # Provision a database entry to store action log later
         try:
@@ -1453,7 +1455,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         # Push result and logs to database
         actionlogfilehandler.close()
         self.logger.removeHandler(actionlogfilehandler)
-        end = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        end = rfc_time.from_epoch(time.time())
         self.push_end_action(action, argv, begin, end, err, actionlogfile)
         return err
 
