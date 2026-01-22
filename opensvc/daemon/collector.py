@@ -514,19 +514,18 @@ class Collector(shared.OsvcThread):
 
                 self.log.debug("replay: %s %s instance action %s", oc3_method, oc3_path, path)
                 status_code, _ = shared.NODE.collector_oc3_request(oc3_method, oc3_path, data=data, timeout=2, headers=headers)
-                if status_code == 202:
+                if status_code in [202, 400]:
                     self.log.debug("replay: %s %s status code %d for object %s completed in %0.3f",
                                   oc3_method, oc3_path, status_code, path, time.time() - begin)
+                    try:
+                        os.unlink(f)
+                    except Exception as exc:
+                        self.log.debug("replaying %s unable to remove %s",f, str(exc))
                 else:
                     self.log.debug("replay: %s %s unexpected status code %d for object %s completed in %0.3f",
                                    oc3_method, oc3_path, status_code, path, time.time() - begin)
             except Exception as exc:
                 self.log.debug("replaying %s failed: %s", f, str(exc))
-            finally:
-                try:
-                    os.unlink(f)
-                except Exception as exc:
-                    self.log.debug("replaying %s unable to remove %s",f, str(exc))
 
     @lazy
     def oc3_version(self):
