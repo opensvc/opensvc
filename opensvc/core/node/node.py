@@ -2998,12 +2998,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         def returns(ret_code, read_closer):
             if ret_code == 204:
                 return ret_code, None
+            b = None
             try:
-                ret_data = json.loads(read_closer.read().decode("utf-8"))
+                b = read_closer.read()
+                ret_data = json.loads(b.decode("utf-8"))
                 return ret_code, ret_data
             except Exception as decode_err:
-                raise ex.Error("oc3 %s %s status code %d can't decode response: %s" %
-                           (method, url, ret_code, str(decode_err)))
+                self.log.debug("oc3 %s %s status code %d can't decode response: %s",
+                               method, url, ret_code, str(decode_err))
+                return ret_code, b
             finally:
                 read_closer.close()
 
