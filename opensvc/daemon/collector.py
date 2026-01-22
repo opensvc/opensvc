@@ -341,9 +341,9 @@ class Collector(shared.OsvcThread):
                 }
                 status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
                 if status_code != 202:
-                    self.log.error("dbg collector POST %s unexpected status code %d %0.3f", status_code, oc3_path, time.time() - begin)
+                    self.log.warning("collector POST %s unexpected status code %d %0.3f", oc3_path, status_code, time.time() - begin)
                 else:
-                    self.log.debug("dbg collector POST %s status code %d %0.3f", status_code, oc3_path, time.time() - begin)
+                    self.log.debug("collector POST %s status code %d %0.3f", oc3_path, status_code, time.time() - begin)
                     object_without_config = response_body.get("object_without_config", [])
                     if len(object_without_config) > 0:
                         # purge configs sent of object_without_config
