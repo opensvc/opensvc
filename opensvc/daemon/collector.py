@@ -1,6 +1,7 @@
 """
 Collector Thread
 """
+import glob
 import json
 import os
 import logging
@@ -15,16 +16,21 @@ from utilities.semver import Semver
 
 MAX_QUEUED = 1000
 RESCAN_OC3_VERSION_INTERVAL = 24 * 60 * 60
+REPLAY_OC3_INTERVAL = 5 * 60
 
 
 class Collector(shared.OsvcThread):
     name = "collector"
+    last_oc3_replay = time.time() - REPLAY_OC3_INTERVAL
 
     def reset(self):
         self.last_comm = None
         self.last_config = {}
         self.last_status = {}
         self.last_status_changed = set()
+
+        # force oc3 replay on collector startup or reset
+        self.last_oc3_replay = time.time() - REPLAY_OC3_INTERVAL
 
     def run(self):
         self.set_tid()
@@ -220,6 +226,7 @@ class Collector(shared.OsvcThread):
         else:
             self.run_collector()
             self.unqueue_xmlrpc()
+            self.oc3_replay()
         if not self.stopped():
             with shared.COLLECTOR_TICKER:
                 shared.COLLECTOR_TICKER.wait(self.db_update_interval)
@@ -479,6 +486,47 @@ class Collector(shared.OsvcThread):
             elif self.last_comm <= now - self.db_min_ping_interval:
                 self.ping(data)
             self.last_status = last_status
+
+    def oc3_replay(self):
+        if time.time() - self.last_oc3_replay < REPLAY_OC3_INTERVAL:
+            return
+        elif self.oc3_version < Semver(1, 0, 11):
+            self.last_oc3_replay = time.time()
+            return
+
+        self.last_oc3_replay = time.time()
+
+        replay_dir = os.path.join(Env.paths.pathtmpv, "oc3_replay")
+        os.makedirs(replay_dir, exist_ok=True)
+
+        for f in glob.glob(os.path.join(replay_dir, "oc3_feed_instance_action_*.json")):
+            self.log.debug("replaying %s", f)
+            try:
+                data = json.load(open(f))
+                path = data.get("path", "")
+                if path == "":
+                    self.log.debug("replaying %s: unexpected empty path found", f)
+                    continue
+                begin = time.time()
+                oc3_path = "/oc3/feed/instance/action"
+                oc3_method = "PUT"
+                headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+                self.log.debug("replay: %s %s instance action %s", oc3_method, oc3_path, path)
+                status_code, _ = shared.NODE.collector_oc3_request(oc3_method, oc3_path, data=data, timeout=2, headers=headers)
+                if status_code == 202:
+                    self.log.debug("replay: %s %s status code %d for object %s completed in %0.3f",
+                                  oc3_method, oc3_path, status_code, path, time.time() - begin)
+                else:
+                    self.log.debug("replay: %s %s unexpected status code %d for object %s completed in %0.3f",
+                                   oc3_method, oc3_path, status_code, path, time.time() - begin)
+            except Exception as exc:
+                self.log.debug("replaying %s failed: %s", f, str(exc))
+            finally:
+                try:
+                    os.unlink(f)
+                except Exception as exc:
+                    self.log.debug("replaying %s unable to remove %s",f, str(exc))
 
     @lazy
     def oc3_version(self):

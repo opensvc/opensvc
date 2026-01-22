@@ -1343,8 +1343,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     self.log.debug("%s %s accepted", oc3_method, oc3_path)
                 else:
                     raise ex.Error("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
-            except Exception as exc:
-                raise ex.Error(str(exc))
+            except Exception:
+                # Ignore the error and continue, push_end_action may succeed
+                pass
         else:
             self.node.daemon_collector_xmlrpc("begin_action", self.path,
                                               action, self.node.agent_version,
@@ -1361,6 +1362,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
             oc3_method = "PUT"
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
             self.log.debug("%s %s", oc3_method, oc3_path)
+            data = {}
             try:
                 status = "ok"
                 if err != 0:
@@ -1372,6 +1374,11 @@ class BaseSvc(Crypt, ExtConfigMixin):
                         log_contents = file.read()
                 except:
                     pass
+                finally:
+                    try:
+                        os.unlink(logfile)
+                    except:
+                        pass
 
                 data = {
                     "path": self.path,
@@ -1389,16 +1396,52 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                                                              headers=headers, timeout=1)
                 if status_code == 202:
                     self.log.debug("%s %s accepted", oc3_method, oc3_path)
-                    os.unlink(logfile)
+                elif status_code == 400:
+                    self.log.debug("%s %s bad request ignored, no replay", oc3_method, oc3_path)
                 else:
                     self.log.debug("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
                     raise ex.Error(
                         "%s %s unexpected status code %d" % (oc3_method, oc3_path, status_code))
             except Exception as exc:
-                # TODO: cleanup or add a retry mechanism here
                 self.log.debug(
                     "%s %s unexpected error: %s" % (oc3_method, oc3_path, str(exc)))
-                pass
+
+                # perhaps oc3 is not available yet, prepare a oc3 replay_file
+                replay_file = None
+                replay_file_need_close = False
+                try:
+                    import glob
+                    max_replay = 100
+                    replay_dir = os.path.join(Env.paths.pathtmpv, "oc3_replay")
+                    os.makedirs(replay_dir, exist_ok=True)
+                    replay_file_need_close = True
+                    replay_file = tempfile.NamedTemporaryFile(mode='w+', delete=False, dir=replay_dir, suffix=".tmp",
+                                                              prefix="oc3_feed_instance_action_%s.%s."% (self.name, action))
+                    replay_files = sorted(glob.glob(os.path.join(replay_dir, "*")), key=lambda x: os.stat(x).st_mtime)
+                    if len(replay_files) > max_replay:
+                        try:
+                            os.unlink(replay_files[0])
+                        except:
+                            # perhaps already removed by another process
+                            pass
+                    json.dump(data, replay_file)
+                    self.log.debug("created retry oc3 file: %s", replay_file.name)
+                    replay_file.close()
+                    replay_file_need_close = False
+                    replay_file_json = replay_file.name[:-4] + ".json"
+                    os.rename(replay_file.name, replay_file_json)
+                    replay_file = None
+                except Exception as exc:
+                    self.log.debug("created retry oc3 failed: %s", exc)
+                    if replay_file:
+                        if replay_file_need_close:
+                            try:
+                                replay_file.close()
+                            except:
+                                pass
+                        try: os.unlink(replay_file.name)
+                        except: pass
+
         else:
             try:
                 self.node.daemon_collector_xmlrpc("end_action", self.path, action,
