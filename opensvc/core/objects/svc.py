@@ -18,6 +18,7 @@ from errno import ECONNREFUSED
 import core.exceptions as ex
 import core.logger
 import core.status
+import core.oc3path as oc3path
 import utilities.lock
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.configfile import move_config_file
@@ -1323,10 +1324,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
     def push_begin_action(self, action, argv, begin):
         if self.node.oc3_version() >= Semver(1, 0, 11):
-            oc3_path = "/oc3/feed/instance/action"
-            oc3_method = "POST"
+            api_verb = "POST"
+            api_path = oc3path.FEED_INSTANCE_ACTION
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.debug("%s %s", oc3_method, oc3_path)
+            self.log.debug("%s %s", api_verb, api_path)
             try:
                 data = {
                     "path": self.path,
@@ -1337,12 +1338,12 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "session_uuid": Env.session_uuid,
                     "version": self.node.agent_version,
                 }
-                status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
+                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
                                                                              headers=headers, timeout=1)
                 if status_code == 202:
-                    self.log.debug("%s %s accepted", oc3_method, oc3_path)
+                    self.log.debug("%s %s accepted", api_verb, api_path)
                 else:
-                    raise ex.Error("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
+                    raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception:
                 # Ignore the error and continue, push_end_action may succeed
                 pass
@@ -1358,10 +1359,10 @@ class BaseSvc(Crypt, ExtConfigMixin):
         the action log.
         """
         if self.node.oc3_version() >= Semver(1, 0, 11):
-            oc3_path = "/oc3/feed/instance/action"
-            oc3_method = "PUT"
+            api_verb = "PUT"
+            api_path = oc3path.FEED_INSTANCE_ACTION
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.debug("%s %s", oc3_method, oc3_path)
+            self.log.debug("%s %s", api_verb, api_path)
             data = {}
             try:
                 status = "ok"
@@ -1392,19 +1393,19 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "session_uuid": Env.session_uuid,
                     "version": self.node.agent_version,
                 }
-                status_code, response_data = self.node.collector_oc3_request(oc3_method, oc3_path, data=data,
+                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
                                                                              headers=headers, timeout=1)
                 if status_code == 202:
-                    self.log.debug("%s %s accepted", oc3_method, oc3_path)
+                    self.log.debug("%s %s accepted", api_verb, api_path)
                 elif status_code == 400:
-                    self.log.debug("%s %s bad request ignored, no replay", oc3_method, oc3_path)
+                    self.log.debug("%s %s bad request ignored, no replay", api_verb, api_path)
                 else:
-                    self.log.debug("%s %s unexpected status code %d: %s" % (oc3_method, oc3_path, status_code, response_data))
+                    self.log.debug("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
                     raise ex.Error(
-                        "%s %s unexpected status code %d" % (oc3_method, oc3_path, status_code))
+                        "%s %s unexpected status code %d" % (api_verb, api_path, status_code))
             except Exception as exc:
                 self.log.debug(
-                    "%s %s unexpected error: %s" % (oc3_method, oc3_path, str(exc)))
+                    "%s %s unexpected error: %s" % (api_verb, api_path, str(exc)))
 
                 # perhaps oc3 is not available yet, prepare a oc3 replay_file
                 replay_file = None
@@ -5138,23 +5139,24 @@ class Svc(PgMixin, BaseSvc):
         Usually done asynchronously and automatically by the collector thread.
         """
         if self.node.oc3_version() >= Semver(1, 0, 7):
-            oc3_path = "/oc3/feed/instance/status?sync=true"
+            api_verb = "POST"
+            api_path = oc3path.FEED_INSTANCE_STATUS + "?sync=true"
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.info("POST %s", oc3_path)
+            self.log.info("%s %s", api_verb, api_path)
             try:
                 data = {
                     "path": self.path,
                     "version": "2.1",
                     "data": self.print_status_data(mon_data=False, refresh=True)
                 }
-                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data,
+                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
                                                                              headers=headers)
                 if status_code == 200:
                     return None
                 elif status_code == 202:
-                    self.log.info("POST %s accepted but not yet processed", oc3_path)
+                    self.log.info("%s %s accepted but not yet processed", api_verb, api_path)
                 else:
-                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+                    raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception as exc:
                 raise ex.Error(str(exc))
         else:
@@ -5166,14 +5168,15 @@ class Svc(PgMixin, BaseSvc):
         automatically by the collector thread.
         """
         if self.node.oc3_version() >= Semver(1, 0, 3):
-            oc3_path = "/oc3/feed/object/config"
+            api_verb = "POST"
+            api_path = oc3path.FEED_OBJECT_CONFIG
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.info("POST %s", oc3_path)
+            self.log.info("%s %s", api_verb, api_path)
             try:
                 data = self.oc3_object_config_body()
-                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
-                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+                    raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception as exc:
                 raise ex.Error(str(exc))
         else:
@@ -5185,14 +5188,15 @@ class Svc(PgMixin, BaseSvc):
         Push the per-resource key/value pairs to the collector.
         """
         if self.node.oc3_version() >= Semver(1, 0, 6):
-            oc3_path = "/oc3/feed/instance/resource_info"
+            api_verb = "POST"
+            api_path = oc3path.FEED_INSTANCE_RESINFO
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.info("POST %s", oc3_path)
+            self.log.info("%s %s", api_verb, api_path)
             try:
                 data = self.oc3_instance_resource_info_body()
-                status_code, response_data = self.node.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
-                    raise ex.Error("POST %s unexpected status code %d: %s" % (oc3_path, status_code, response_data))
+                    raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception as exc:
                 raise ex.Error(str(exc))
         else:

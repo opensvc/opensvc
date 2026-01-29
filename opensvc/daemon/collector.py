@@ -9,6 +9,7 @@ import time
 from copy import deepcopy
 
 import daemon.shared as shared
+import core.oc3path as oc3path
 from env import Env
 from utilities.lazy import lazy, unset_lazy
 from utilities.naming import svc_pathvar, split_path
@@ -302,12 +303,14 @@ class Collector(shared.OsvcThread):
         try:
             if self.oc3_version >= Semver(1, 0, 3):
                 begin = time.time()
-                oc3_path = "/oc3/feed/object/config"
+                api_verb = "POST"
+                api_path = oc3path.FEED_OBJECT_CONFIG
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
-                self.log.info("POST %s object config %s", oc3_path, path)
-                status_code, _ = shared.NODE.collector_oc3_request("POST", oc3_path, data=data, headers=headers)
+                self.log.info("%s %s object config %s", api_verb, api_path, path)
+                status_code, _ = shared.NODE.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
-                    self.log.warning("POST %s unexpected status code %d for object %s completed in %0.3f", oc3_path, status_code, path,     time.time() - begin)
+                    self.log.warning("%s %s unexpected status code %d for object %s completed in %0.3f",
+                                     api_verb, api_path, status_code, path, time.time() - begin)
                 else:
                     sent = True
             else:
@@ -333,17 +336,18 @@ class Collector(shared.OsvcThread):
         try:
             if self.oc3_version >= Semver(1, 0, 4):
                 begin = time.time()
-                oc3_path = "/oc3/feed/daemon/status"
+                api_verb = "POST"
+                api_path = oc3path.FEED_DAEMON_STATUS
                 body = {
                     "version": "2.1",
                     "data": data,
                     "changes": list(self.last_status_changed)
                 }
-                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
+                status_code, response_body = shared.NODE.collector_oc3_request(api_verb, api_path, data=body)
                 if status_code != 202:
-                    self.log.warning("collector POST %s unexpected status code %d %0.3f", oc3_path, status_code, time.time() - begin)
+                    self.log.warning("collector %s %s unexpected status code %d %0.3f", api_verb, api_path, status_code, time.time() - begin)
                 else:
-                    self.log.debug("collector POST %s status code %d %0.3f", oc3_path, status_code, time.time() - begin)
+                    self.log.debug("collector %s %s status code %d %0.3f", api_verb, api_path, status_code, time.time() - begin)
                     object_without_config = response_body.get("object_without_config", [])
                     if len(object_without_config) > 0:
                         # purge configs sent of object_without_config
@@ -363,15 +367,16 @@ class Collector(shared.OsvcThread):
         try:
             if self.oc3_version >= Semver(1, 0, 4):
                 begin = time.time()
-                oc3_path = "/oc3/feed/daemon/ping"
+                api_verb = "POST"
+                api_path = oc3path.FEED_DAEMON_PING
                 body = {
                     "version": "2.1",
                     "nodes": list(data.get("nodes", {}).keys()),
                     "objects": list(data.get("services", {}).keys()),
                 }
-                self.log.debug("POST %s %s", oc3_path, body)
-                status_code, response_body = shared.NODE.collector_oc3_request("POST", oc3_path, data=body)
-                self.log.debug("POST %s %0.3f", status_code,time.time() - begin)
+                self.log.debug("%s %s %s", api_verb, api_path, body)
+                status_code, response_body = shared.NODE.collector_oc3_request(api_verb, api_path, data=body)
+                self.log.debug("%s %s %d %0.3f", api_verb, api_path, status_code, time.time() - begin)
                 if status_code == 202:
                     object_without_config = response_body.get("object_without_config", [])
                     if len(object_without_config) > 0:
@@ -382,7 +387,7 @@ class Collector(shared.OsvcThread):
                     self.log.debug("ping rejected, collector ask for resync")
                     self.send_daemon_status(data)
                 else:
-                    self.log.warning("POST %s unexpected status code %d completed in %0.3f", oc3_path, status_code,time.time() - begin)
+                    self.log.warning("%s %s unexpected status code %d completed in %0.3f", api_verb, api_path, status_code, time.time() - begin)
             else:
                 result = shared.NODE.collector.call("daemon_ping")
                 if result and result.get("info") == "resync":
@@ -508,29 +513,29 @@ class Collector(shared.OsvcThread):
                     self.log.debug("replaying %s: unexpected empty path found", f)
                     continue
                 begin = time.time()
-                oc3_path = "/oc3/feed/instance/action"
-                oc3_method = "PUT"
+                api_verb = "PUT"
+                api_path = oc3path.FEED_INSTANCE_ACTION
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
-                self.log.debug("replay: %s %s instance action %s", oc3_method, oc3_path, path)
-                status_code, _ = shared.NODE.collector_oc3_request(oc3_method, oc3_path, data=data, timeout=2, headers=headers)
+                self.log.debug("replay: %s %s instance action %s", api_verb, api_path, path)
+                status_code, _ = shared.NODE.collector_oc3_request(api_verb, api_path, data=data, timeout=2, headers=headers)
                 if status_code in [202, 400]:
                     self.log.debug("replay: %s %s status code %d for object %s completed in %0.3f",
-                                  oc3_method, oc3_path, status_code, path, time.time() - begin)
+                                  api_verb, api_path, status_code, path, time.time() - begin)
                     try:
                         os.unlink(f)
                     except Exception as exc:
                         self.log.debug("replaying %s unable to remove %s",f, str(exc))
                 else:
                     self.log.debug("replay: %s %s unexpected status code %d for object %s completed in %0.3f",
-                                   oc3_method, oc3_path, status_code, path, time.time() - begin)
+                                   api_verb, api_path, status_code, path, time.time() - begin)
             except Exception as exc:
                 self.log.debug("replaying %s failed: %s", f, str(exc))
 
     @lazy
     def oc3_version(self):
         """
-        returns the oc3 version from GET /oc3/version.
+        returns the oc3 feeder api version
 
         returned values:
             status code 200 => version from body
@@ -539,10 +544,12 @@ class Collector(shared.OsvcThread):
         """
         null_version = Semver(0, 0, 0)
         version = shared.NODE.oc3_version()
+        api_verb = "GET"
+        api_path = oc3path.FEED_VERSION
         try:
             if not shared.NODE.oget("node", "db_oc3"):
                 return null_version
-            status_code, schema = shared.NODE.collector_oc3_request("GET", "/oc3/version")
+            status_code, schema = shared.NODE.collector_oc3_request(api_verb, api_path)
             if status_code == 200:
                 if isinstance(schema, dict):
                     s = schema.get("version", "0.0.0")
@@ -550,12 +557,12 @@ class Collector(shared.OsvcThread):
             elif status_code in [404]:
                 if version != Semver():
                     # collector has no anymore oc3 configured, reset to null
-                    self.log.warning("oc3 version skip cache (GET /oc3/version http status code %d)", status_code)
+                    self.log.warning("oc3 version skip cache (%s %s http status code %d)", api_verb, api_path, status_code)
                 version = null_version
             else:
                 # 502 Bad Gateway, 503 Service Unavailable: oc3 is not yet ready
-                self.log.warning("oc3 version preserve cache (GET /oc3/version http status code %d)", status_code)
+                self.log.warning("oc3 version preserve cache (%s %s http status code %d)", api_verb, api_path, status_code)
         except Exception as err:
             if version > null_version:
-                self.log.warning("oc3 version preserve cache (GET /oc3/version error: %s)", str(err))
+                self.log.warning("oc3 version preserve cache (%s %s error: %s)", api_verb, api_path, str(err))
         return version

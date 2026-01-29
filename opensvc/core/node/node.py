@@ -27,6 +27,7 @@ import foreign.six as six
 import core.exceptions as ex
 import core.logger
 import core.objects.builder
+import core.oc3path as oc3path
 from core.capabilities import capabilities
 from core.comm import Crypt, DEFAULT_DAEMON_TIMEOUT
 from core.configfile import move_config_file
@@ -1138,6 +1139,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
             rfc3339 = RFC3339()
 
+            api_verb = "POST"
+            api_path = oc3path.FEED_NODE_SYSTEM
+
             def to_pkg_dict(l):
                 # l = (nodename, pkgname, version, arch, [type, [installed_at, [sig]]])
                 #
@@ -1152,9 +1156,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pkg["sig"] = l[6]
                 return pkg
             body = {"package": [to_pkg_dict(l) for l in pkgs]}
-            status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/node/system", data=body)
+            status_code, _ = self.collector_oc3_request(api_verb, api_path, data=body)
             if status_code != 202:
-                raise ex.Error("POST /oc3/feed/node/system unexpected status code: %d" % status_code)
+                raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
         else:
             self.collector.call('push_pkg', pkgs)
 
@@ -1180,13 +1184,15 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             try:
                 if self.oc3_version() >= Semver(1, 0, 8):
                     from utilities.rfc3339 import RFC3339
+                    api_verb = "POST"
+                    api_path = oc3path.FEED_NODE_SYSTEM
 
                     if "last_boot" in system_dict.get("properties", {}):
                         last_boot = system_dict["properties"]["last_boot"]["value"]
                         system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
-                    status_code, _ = self.collector_oc3_request("POST", "/oc3/feed/node/system", data=system_dict)
+                    status_code, _ = self.collector_oc3_request(api_verb, api_path, data=system_dict)
                     if status_code != 202:
-                        raise ex.Error("POST /oc3/feed/node/system unexpected status code: %d" % status_code)
+                        raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
                 else:
                     asset_dict = self.asset.system_dict_to_asset_dict(system_dict)
                     self.collector.call('push_asset', self, asset_dict)
@@ -1507,7 +1513,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         try:
             if self.oc3_version() >= Semver(1, 0, 5):
-                api_path = "/oc3/feed/node/disk"
+                api_verb = "POST"
+                api_path = oc3path.FEED_NODE_DISK
                 l = []
                 for disk_id, disk in data["disks"].items():
                     for svcname, service in disk["services"].items():
@@ -1532,9 +1539,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                             "dg": disk["dg"],
                             "region": "0"
                         })
-                status_code, _ = self.collector_oc3_request("POST", api_path, data={"data": l})
+                status_code, _ = self.collector_oc3_request(api_verb, api_path, data={"data": l})
                 if status_code != 202:
-                    raise ex.Error("POST %s unexpected status code: %d" % (api_path, status_code))
+                    raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
                 # TODO: ensure "served_disks" from data is not anymore used
             else:
                 self.collector.call('push_disks', data)
