@@ -2969,7 +2969,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Make a request to the collector's oc3 api and returns status code and json decoded response
 
-        it will raise if it can't decode http response, or can't get http status code
+        it will raise if it can't decode the http response, or can't get http status code
 
         Returns:
             tuple[status_code, data]: A tuple containing the http status code of
@@ -2986,6 +2986,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             headers = {"Accept": "application/json"}
             if data is not None:
                 headers["Content-Type"] = "application/json"
+
+        from utilities.uri import Uri
+        headers["Host"] = Uri(url).host_header()
 
         request = Request(url, headers=headers)
         request.get_method = lambda: method
