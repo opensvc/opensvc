@@ -70,7 +70,9 @@ class Uri(object):
         parsed = urlparse(self.uri)
         hdr = parsed.hostname
         if parsed.port:
-            hdr = hdr + ':' + str(parsed.port)
+            # Add non-standard ports
+            if (parsed.scheme == 'http' and parsed.port != 80) or (parsed.scheme == 'https' and parsed.port != 443):
+                hdr = hdr + ':' + str(parsed.port)
         return hdr
 
 def ssl_context_kwargs():
