@@ -5138,6 +5138,10 @@ class Svc(PgMixin, BaseSvc):
         Push the service instance status to the collector synchronously.
         Usually done asynchronously and automatically by the collector thread.
         """
+        status_data = self.print_status_data(mon_data=False, refresh=True)
+        if data.get("encap", False) is True:
+            self.log.info("skip push status for encap object %s", svcname)
+            return
         if self.node.oc3_version() >= Semver(1, 0, 7):
             api_verb = "POST"
             api_path = oc3path.FEED_INSTANCE_STATUS + "?sync=true"
@@ -5147,7 +5151,7 @@ class Svc(PgMixin, BaseSvc):
                 data = {
                     "path": self.path,
                     "version": "2.1",
-                    "data": self.print_status_data(mon_data=False, refresh=True)
+                    "data": status_data,
                 }
                 status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
                                                                              headers=headers)
@@ -5160,7 +5164,7 @@ class Svc(PgMixin, BaseSvc):
             except Exception as exc:
                 raise ex.Error(str(exc))
         else:
-            self.node.collector.call('push_status', self.path, self.print_status_data(mon_data=False, refresh=True))
+            self.node.collector.call('push_status', self.path, status_data)
 
     def push_config(self):
         """
