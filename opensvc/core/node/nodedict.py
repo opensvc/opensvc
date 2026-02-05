@@ -432,6 +432,14 @@ KEYWORDS = [
     },
     {
         "section": "node",
+        "keyword": "collector_timeout",
+        "convert": "duration",
+        "at": True,
+        "default": 5,
+        "text": "The maximum time to wait for a collector v3 call. Maximum allowed value 20."
+    },
+    {
+        "section": "node",
         "keyword": "dbcompliance",
         "example": "https://collector.opensvc.com/init/compliance/call/xmlrpc",
         "default_text": "Same protocol, server and port as dbopensvc, but with an different path.",

@@ -676,6 +676,11 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.feeder = ""
 
+        collector_timeout = self.oget("node", "collector_timeout")
+        if collector_timeout > 20:
+            collector_timeout = 20
+        data.timeout = collector_timeout
+
         return data
 
     def call(self, *args, **kwargs):
@@ -3002,7 +3007,10 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Make a request to the collector's oc3 api and returns status code and json decoded response
 
-        it will raise if it can't decode the http response, or can't get http status code
+        it will raise if it can't decode the http response, or if it can't get http status code
+
+        When timeout is None, the request will use timeout value from the node configuration kw: node.collector_timeout.
+        When timeout is 0, the request will wait forever.
 
         Returns:
             tuple[status_code, data]: A tuple containing the http status code of
@@ -3014,6 +3022,9 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             url = "%s%s" % (base_url, rpath)
         if not url.startswith("https://"):
             raise ex.Error("need https protocol, got %s" % url)
+
+        if timeout is None:
+            timeout = self.collector_env.timeout
 
         if headers is None:
             headers = {"Accept": "application/json"}

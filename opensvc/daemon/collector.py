@@ -518,7 +518,7 @@ class Collector(shared.OsvcThread):
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
                 self.log.debug("replay: %s %s instance action %s", api_verb, api_path, path)
-                status_code, _ = shared.NODE.oc3_request_feed(api_verb, api_path, data=data, timeout=2, headers=headers)
+                status_code, _ = shared.NODE.oc3_request_feed(api_verb, api_path, data=data, headers=headers, timeout=2)
                 if status_code in [202, 400]:
                     self.log.debug("replay: %s %s status code %d for object %s completed in %0.3f",
                                   api_verb, api_path, status_code, path, time.time() - begin)
