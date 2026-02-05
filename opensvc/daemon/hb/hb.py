@@ -90,9 +90,11 @@ class Hb(shared.OsvcThread):
                 "beating": _data.beating if running else False,
             }
         if self.has_changes or time.time() - self.last_published > self.publish_interval:
-            self.node_data.set(["hb", self.id], deepcopy(data))
-            self.has_changes = False
-            self.last_published = time.time()
+            # wait for initial node_data exists (pre-init)
+            if self.node_data.exists(["hb"]):
+                self.node_data.set(["hb", self.id], deepcopy(data))
+                self.has_changes = False
+                self.last_published = time.time()
 
         return data
 
