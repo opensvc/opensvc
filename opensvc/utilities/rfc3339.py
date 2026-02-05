@@ -17,8 +17,9 @@ class RFC3339(object):
 
 
 class RFC3339Formatter(logging.Formatter):
-    local_tz = datetime.now().astimezone().tzinfo
+    def __init__(self, *args, **kwargs):
+        logging.Formatter.__init__(self, *args, **kwargs)
+        self.rfc3339 = RFC3339()
 
     def formatTime(self, record, datefmt=None):
-        dt = datetime.fromtimestamp(record.created, tz=self.local_tz)
-        return dt.isoformat(timespec='microseconds')
+        return self.rfc3339.from_epoch(record.created)
