@@ -653,6 +653,29 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             data.uuid = node_uuid
         else:
             data.uuid = ""
+
+        collector = self.oget("node", "collector")
+        if collector:
+            data.collector = collector
+        else:
+            data.collector = ""
+
+        collector_server = self.oget("node", "collector_server")
+        if collector_server:
+            data.server = collector_server
+        elif collector:
+            data.server = "%s/oc3/api" % collector
+        else:
+            data.server = ""
+
+        collector_feeder = self.oget("node", "collector_feeder")
+        if collector_feeder:
+            data.feeder = collector_feeder
+        elif collector:
+            data.feeder = "%s/oc3/feed/api" % collector
+        else:
+            data.feeder = ""
+
         return data
 
     def call(self, *args, **kwargs):
@@ -1156,7 +1179,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     pkg["sig"] = l[6]
                 return pkg
             body = {"package": [to_pkg_dict(l) for l in pkgs]}
-            status_code, _ = self.collector_oc3_request(api_verb, api_path, data=body)
+            status_code, _ = self.oc3_request_feed(api_verb, api_path, data=body)
             if status_code != 202:
                 raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
         else:
@@ -1190,7 +1213,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     if "last_boot" in system_dict.get("properties", {}):
                         last_boot = system_dict["properties"]["last_boot"]["value"]
                         system_dict["properties"]["last_boot"]["value"] = RFC3339().from_epoch(last_boot)
-                    status_code, _ = self.collector_oc3_request(api_verb, api_path, data=system_dict)
+                    status_code, _ = self.oc3_request_feed(api_verb, api_path, data=system_dict)
                     if status_code != 202:
                         raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
                 else:
@@ -1539,7 +1562,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                             "dg": disk["dg"],
                             "region": "0"
                         })
-                status_code, _ = self.collector_oc3_request(api_verb, api_path, data={"data": l})
+                status_code, _ = self.oc3_request_feed(api_verb, api_path, data={"data": l})
                 if status_code != 202:
                     raise ex.Error("%s %s unexpected status code: %d" % (api_verb, api_path, status_code))
                 # TODO: ensure "served_disks" from data is not anymore used
@@ -2965,7 +2988,17 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         username, password = self.collector_auth_node()
         return base64encode('%s:%s' % (username, password)).replace("\n", "")
 
-    def collector_oc3_request(self, method, rpath, base_url=None, headers=None, data=None, timeout=None, **kwargs):
+    def oc3_request_server(self, method, rpath, base_url=None, headers=None, data=None, timeout=None, **kwargs):
+        if base_url is None:
+            base_url = self.collector_env.server
+        return self.oc3_request(method, rpath, base_url=base_url, headers=headers, data=data, timeout=timeout, **kwargs)
+
+    def oc3_request_feed(self, method, rpath, base_url=None, headers=None, data=None, timeout=None, **kwargs):
+        if base_url is None:
+            base_url = self.collector_env.feeder
+        return self.oc3_request(method, rpath, base_url=base_url, headers=headers, data=data, timeout=timeout, **kwargs)
+
+    def oc3_request(self, method, rpath, base_url=None, headers=None, data=None, timeout=None, **kwargs):
         """
         Make a request to the collector's oc3 api and returns status code and json decoded response
 

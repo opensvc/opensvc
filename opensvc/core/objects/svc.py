@@ -1338,8 +1338,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "session_uuid": Env.session_uuid,
                     "version": self.node.agent_version,
                 }
-                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
-                                                                             headers=headers, timeout=1)
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers,
+                                                                        timeout=1)
                 if status_code == 202:
                     self.log.debug("%s %s accepted", api_verb, api_path)
                 else:
@@ -1393,8 +1393,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     "session_uuid": Env.session_uuid,
                     "version": self.node.agent_version,
                 }
-                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
-                                                                             headers=headers, timeout=1)
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers,
+                                                                        timeout=1)
                 if status_code == 202:
                     self.log.debug("%s %s accepted", api_verb, api_path)
                 elif status_code == 400:
@@ -5153,8 +5153,7 @@ class Svc(PgMixin, BaseSvc):
                     "version": "2.1",
                     "data": status_data,
                 }
-                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data,
-                                                                             headers=headers)
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers)
                 if status_code == 200:
                     return None
                 elif status_code == 202:
@@ -5178,7 +5177,7 @@ class Svc(PgMixin, BaseSvc):
             self.log.info("%s %s", api_verb, api_path)
             try:
                 data = self.oc3_object_config_body()
-                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
                     raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception as exc:
@@ -5198,7 +5197,7 @@ class Svc(PgMixin, BaseSvc):
             self.log.info("%s %s", api_verb, api_path)
             try:
                 data = self.oc3_instance_resource_info_body()
-                status_code, response_data = self.node.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
                     raise ex.Error("%s %s unexpected status code %d: %s" % (api_verb, api_path, status_code, response_data))
             except Exception as exc:

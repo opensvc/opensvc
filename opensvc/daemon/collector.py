@@ -307,7 +307,7 @@ class Collector(shared.OsvcThread):
                 api_path = oc3path.FEED_OBJECT_CONFIG
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
                 self.log.info("%s %s object config %s", api_verb, api_path, path)
-                status_code, _ = shared.NODE.collector_oc3_request(api_verb, api_path, data=data, headers=headers)
+                status_code, _ = shared.NODE.oc3_request_feed(api_verb, api_path, data=data, headers=headers)
                 if status_code != 202:
                     self.log.warning("%s %s unexpected status code %d for object %s completed in %0.3f",
                                      api_verb, api_path, status_code, path, time.time() - begin)
@@ -343,7 +343,7 @@ class Collector(shared.OsvcThread):
                     "data": data,
                     "changes": list(self.last_status_changed)
                 }
-                status_code, response_body = shared.NODE.collector_oc3_request(api_verb, api_path, data=body)
+                status_code, response_body = shared.NODE.oc3_request_feed(api_verb, api_path, data=body)
                 if status_code != 202:
                     self.log.warning("collector %s %s unexpected status code %d %0.3f", api_verb, api_path, status_code, time.time() - begin)
                 else:
@@ -375,7 +375,7 @@ class Collector(shared.OsvcThread):
                     "objects": list(data.get("services", {}).keys()),
                 }
                 self.log.debug("%s %s %s", api_verb, api_path, body)
-                status_code, response_body = shared.NODE.collector_oc3_request(api_verb, api_path, data=body)
+                status_code, response_body = shared.NODE.oc3_request_feed(api_verb, api_path, data=body)
                 self.log.debug("%s %s %d %0.3f", api_verb, api_path, status_code, time.time() - begin)
                 if status_code == 202:
                     object_without_config = response_body.get("object_without_config", [])
@@ -518,7 +518,7 @@ class Collector(shared.OsvcThread):
                 headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
                 self.log.debug("replay: %s %s instance action %s", api_verb, api_path, path)
-                status_code, _ = shared.NODE.collector_oc3_request(api_verb, api_path, data=data, timeout=2, headers=headers)
+                status_code, _ = shared.NODE.oc3_request_feed(api_verb, api_path, data=data, timeout=2, headers=headers)
                 if status_code in [202, 400]:
                     self.log.debug("replay: %s %s status code %d for object %s completed in %0.3f",
                                   api_verb, api_path, status_code, path, time.time() - begin)
@@ -547,9 +547,9 @@ class Collector(shared.OsvcThread):
         api_verb = "GET"
         api_path = oc3path.FEED_VERSION
         try:
-            if not shared.NODE.oget("node", "db_oc3"):
+            if not shared.NODE.collector_env.feeder:
                 return null_version
-            status_code, schema = shared.NODE.collector_oc3_request(api_verb, api_path)
+            status_code, schema = shared.NODE.oc3_request_feed(api_verb, api_path)
             if status_code == 200:
                 if isinstance(schema, dict):
                     s = schema.get("version", "0.0.0")

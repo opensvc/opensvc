@@ -414,11 +414,21 @@ KEYWORDS = [
     },
     {
         "section": "node",
-        "keyword": "db_oc3",
-        "convert": "boolean",
-        "default": False,
-        "text": "When set to true, OpenSVC Collector 3 calls are enabled if Collector 3 is detected."
-                " By default, this is set to false, so the calls are disabled even when Collector 3 is detected."
+        "keyword": "collector",
+        "example": "https://collector.opensvc.com",
+        "text": "The system enables OpenSVC Collector 3 calls conditional upon the detection of the Collector 3 environment. If collector_feeder or collector_server are not explicitly defined, they are derived from this value."
+    },
+    {
+        "section": "node",
+        "keyword": "collector_feeder",
+        "example": "https://collector.opensvc.com/oc3/feed",
+        "text": "OpenSVC enables Collector v3 feeder calls upon detection of a collector v3 instance. When the feeder path is undefined, the system automatically constructs it using the format: node.collector + /oc3/feed."
+    },
+    {
+        "section": "node",
+        "keyword": "collector_server",
+        "example": "https://collector.opensvc.com/oc3",
+        "text": "OpenSVC enables Collector v3 server calls upon detection of a collector v3 instance. When the server path is undefined, the system automatically constructs it using the format: node.collector + /oc3."
     },
     {
         "section": "node",
