@@ -2,6 +2,7 @@ import datetime
 import os
 import re
 
+from utilities.xdatetime import as_timestamp
 from .asset import BaseAsset
 from utilities.lazy import lazy
 from utilities.storage import Storage
@@ -755,9 +756,10 @@ class Asset(BaseAsset):
             s = f.readline().split()[0]
         last = datetime.datetime.now() - datetime.timedelta(seconds=float(s))
         last = last.replace(microsecond=0)
+        last_ts = as_timestamp(last)
         return {
             "title": "last boot",
-            "value": last.timestamp(),
+            "value": last_ts,
             "source": self.s_probe
         }
 
