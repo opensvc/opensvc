@@ -755,9 +755,17 @@ class Asset(BaseAsset):
             s = f.readline().split()[0]
         last = datetime.datetime.now() - datetime.timedelta(seconds=float(s))
         last = last.replace(microsecond=0)
+
+        try:
+            last_ts = last.timestamp()
+        except AttributeError:
+            # Python 2.7 fallback
+            import time
+            last_ts = time.mktime(last.timetuple())
+
         return {
             "title": "last boot",
-            "value": last.timestamp(),
+            "value": last_ts,
             "source": self.s_probe
         }
 
