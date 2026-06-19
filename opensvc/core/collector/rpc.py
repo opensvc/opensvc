@@ -345,7 +345,7 @@ class CollectorRpc(object):
     def end_action(self, data, begin, end):
         svcname = data.get("path", "")
         action = data.get("action", "")
-        hostname = str(Env.nodename),
+        hostname = str(Env.nodename)
         sid = data.get("session_uuid", "")
         cron = data.get("cron")
         status = data.get("status", "")
