@@ -15,17 +15,12 @@ clean_systemd() {
 }
 
 case "$1" in
-purge)
-        rm -rf /var/lib/opensvc /var/log/opensvc /etc/opensvc /usr/share/opensvc
-        rm -f /etc/default/opensvc 
-        ;;
-
 remove)
         clean_systemd
         rm -f /etc/profile.d/opensvc.sh
         ;;
 
-upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
         ;;
 
 *)
