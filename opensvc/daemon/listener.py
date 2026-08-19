@@ -1412,6 +1412,8 @@ class ClientHandler(shared.OsvcThread):
                 self.stop()
 
     def handle_h2_client(self):
+        # Prevent hang during tls negociation
+        self.conn.settimeout(self.sock_tmo)
         self.negotiate_tls()
         self.tls_conn.settimeout(self.sock_tmo)
 
