@@ -343,3 +343,119 @@ class TestDiskMdDevname:
         md.name = "abcd"
         assert md.devname() == "/dev/md/abcd"
 
+
+
+# A uuid as mdadm writes it, and the same in the form blkid prints.
+md_uuid = '4198d2fe:84f45665:58aae039:ceff1171'
+md_blkid_uuid = '4198d2fe-84f4-5665-58aa-e039ceff1171'
+
+blkid_out = """/dev/sda1: UUID="0e6e8dfd-8f9c-4b5e-9a5e-1c14b0e1a4e5" TYPE="ext4"
+/dev/loop4: UUID="%s" UUID_SUB="1ae4ca4a-0cbc-0a60-45a8-ee18231da0b3" LABEL="node1:s.disk.1" TYPE="linux_raid_member"
+/dev/loop5: UUID="%s" UUID_SUB="98c635be-d1c9-f449-bdf7-f3e2bf375e98" LABEL="node1:s.disk.1" TYPE="linux_raid_member"
+""" % (md_blkid_uuid, md_blkid_uuid)
+
+blkid_out_other_md = """/dev/loop6: UUID="deadbeef-dead-beef-dead-beefdeadbeef" TYPE="linux_raid_member"
+"""
+
+blkid_out_container = """/dev/sdb: TYPE="isw_raid_member"
+/dev/sdc: TYPE="isw_raid_member"
+"""
+
+
+@pytest.fixture(scope='function')
+def blkid(mocker):
+    return mocker.patch(LIB_NAME + '.justcall_blkid', return_value=(blkid_out, '', 0))
+
+
+@pytest.fixture(scope='function')
+def dev_to_paths(mocker):
+    return mocker.patch('utilities.devices.linux.dev_to_paths', side_effect=lambda dev: [dev])
+
+
+@pytest.fixture(scope='function')
+def md_blkid(svc, mocker, tmp_file):
+    mocker.patch.object(DiskMd, 'mdadm_cf',
+                        new_callable=mocker.PropertyMock(return_value=tmp_file))
+    md = DiskMd(rid='disk#1', devs=['/dev/loop4', '/dev/loop5'], spares=0)
+    md.svc = svc
+    md.uuid = md_uuid
+    return md
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+@pytest.mark.usefixtures('has_mdadm')
+class TestDiskMdBlkid:
+    """
+    blkid answers "is this md here, and which devices hold it" by
+    reading the superblock where each metadata format keeps it, where
+    "mdadm -E --scan" reads the devices through when it is not told
+    which format to expect.
+    """
+
+    @staticmethod
+    def test_the_uuid_is_converted_to_the_form_blkid_prints(md_blkid):
+        assert md_blkid.blkid_uuid() == md_blkid_uuid
+
+    @staticmethod
+    @pytest.mark.parametrize('uuid', ['s-uuid', '', None, '4198d2fe:84f45665'])
+    def test_a_uuid_mdadm_would_not_have_written_is_left_to_the_scan(md_blkid, uuid):
+        md_blkid.uuid = uuid
+        assert md_blkid.blkid_uuid() is None
+        assert md_blkid.blkid_members() == (set(), False)
+
+    @staticmethod
+    def test_has_it_without_running_the_scan(blkid, mdadm_scan, md_blkid):
+        assert md_blkid.has_it() is True
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_has_not_it_without_running_the_scan(blkid, mdadm_scan, md_blkid):
+        blkid.return_value = blkid_out_other_md, '', 0
+        assert md_blkid.has_it() is False
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_a_node_holding_no_md_is_an_answer_too(blkid, mdadm_scan, md_blkid):
+        blkid.return_value = '', '', 2
+        assert md_blkid.has_it() is False
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_a_container_member_is_left_to_the_scan(blkid, mdadm_scan, md_blkid):
+        # An imsm or ddf container names none of the volumes it holds,
+        # so the md looked for may be in there.
+        blkid.return_value = blkid_out_container, '', 0
+        md_blkid.uuid = 's-uuid'  # the uuid the mocked scan reports
+        assert md_blkid.has_it() is True
+        assert mdadm_scan.call_count == 1
+
+    @staticmethod
+    def test_a_failed_blkid_is_left_to_the_scan(blkid, mdadm_scan, md_blkid):
+        blkid.return_value = '', 'blkid: error', 1
+        md_blkid.uuid = 's-uuid'
+        assert md_blkid.has_it() is True
+        assert mdadm_scan.call_count == 1
+
+    @staticmethod
+    def test_an_absent_blkid_is_left_to_the_scan(mocker, mdadm_scan, md_blkid):
+        mocker.patch(LIB_NAME + '.which',
+                     side_effect=lambda prog: None if prog == 'blkid' else '/sbin/' + prog)
+        md_blkid.uuid = 's-uuid'
+        assert md_blkid.has_it() is True
+        assert mdadm_scan.call_count == 1
+
+    @staticmethod
+    def test_sub_devs_inactive_without_running_the_scan(blkid, mdadm_scan, dev_to_paths, md_blkid):
+        assert md_blkid.sub_devs_inactive() == {'/dev/loop4', '/dev/loop5'}
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_sub_devs_inactive_reports_a_lun_once(blkid, mdadm_scan, mocker, md_blkid):
+        # blkid lists a multipathed member once per path, as mdadm does.
+        blkid.return_value = blkid_out + \
+            '/dev/sdx: UUID="%s" TYPE="linux_raid_member"\n' % md_blkid_uuid, '', 0
+        mocker.patch('utilities.devices.linux.dev_to_paths',
+                     side_effect=lambda dev: ['/dev/sdx'] if dev == '/dev/loop4' else [dev])
+        assert md_blkid.sub_devs_inactive() == {'/dev/loop4', '/dev/loop5'}
+        assert mdadm_scan.call_count == 0
