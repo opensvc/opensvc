@@ -100,6 +100,10 @@ def justcall_md_create(*args, **kwargs):
     return justcall(*args, **kwargs)
 
 
+def justcall_blkid(*args, **kwargs):
+    return justcall(*args, **kwargs)
+
+
 class DiskMd(BaseDisk):
     startup_timeout = 10
 
@@ -173,6 +177,7 @@ class DiskMd(BaseDisk):
         self._unset_svc_rid_uuid()
         self.svc.node.unset_lazy("devtree")
         self.clear_cache("mdadm.scan.v")
+        self.clear_cache("blkid.scan")
 
     def _info(self):
         data = [
@@ -275,6 +280,7 @@ class DiskMd(BaseDisk):
         cmd = [self.mdadm, "--assemble", self.devname(), "-u", self.uuid]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         self.clear_cache("mdadm.scan.v")
+        self.clear_cache("blkid.scan")
         if ret == 2:
             self.log.info("no changes were made to the array")
         elif ret != 0:
@@ -286,6 +292,7 @@ class DiskMd(BaseDisk):
         cmd = [self.mdadm, "--stop", self.md_devpath()]
         ret, out, err = self.vcall(cmd, warn_to_info=True)
         self.clear_cache("mdadm.scan.v")
+        self.clear_cache("blkid.scan")
         if ret != 0:
             raise ex.Error
 
@@ -325,6 +332,9 @@ class DiskMd(BaseDisk):
     def has_it(self):
         if self.uuid == "" or self.uuid is None:
             return False
+        devs, authoritative = self.blkid_members()
+        if authoritative:
+            return len(devs) > 0
         return self._mdadm_scan_match(self.mdadm_scan_v()[0], uuid=self.uuid)
 
     def is_up(self):
@@ -438,7 +448,110 @@ class DiskMd(BaseDisk):
     def mdadm_scan_v(self):
         return justcall_mdadm_scan(argv=[self.mdadm, "-E", "--scan", "-v"])
 
+    @cache("blkid.scan")
+    def blkid_scan(self):
+        """
+        Return the (out, err, ret) of a blkid probe of the devices of
+        this node.
+
+        blkid reads the superblock where each format keeps it, near the
+        start of the device for the 1.x metadata and at its end for the
+        0.90, so it identifies a md member without being told which
+        format to expect. "mdadm -E --scan" reads the device through
+        when it is not given a -e, which on a node holding large luns
+        costs tens of seconds of heavy io, and this driver asks for the
+        scan on every status evaluation.
+
+        The cache is bypassed with -c so that the answer describes the
+        devices as they are, not as a blkid.tab written before the last
+        change to them.
+        """
+        if not self.blkid:
+            return "", "", 1
+        return justcall_blkid(argv=[self.blkid, "-c", os.devnull])
+
+    @lazy
+    def blkid(self):
+        return which("blkid")
+
+    def blkid_uuid(self):
+        """
+        Return the uuid of this md in the form blkid prints, or None
+        when the configured uuid is not one mdadm would have written.
+
+        mdadm writes it as four colon separated words of 8 hexadecimal
+        digits, blkid as the 8-4-4-4-12 form.
+
+        Not lazy: the provisioner learns the uuid of the array it just
+        created and sets it on this resource, and a value computed
+        before that would outlive it.
+        """
+        if not self.uuid:
+            return None
+        clean = self.uuid.replace(":", "").replace("-", "")
+        if len(clean) != 32:
+            return None
+        return "-".join((clean[0:8], clean[8:12], clean[12:16],
+                         clean[16:20], clean[20:32]))
+
+    def blkid_members(self):
+        """
+        Return the devices holding a member superblock of this md, and
+        whether blkid was able to answer at all.
+
+        The answer is not authoritative when blkid is absent or failed,
+        and when the node holds a container member superblock: a imsm
+        or ddf container names none of the volumes it holds, so the md
+        looked for may be in there and only mdadm can tell. Both fall
+        back to the mdadm scan, as does a uuid blkid cannot express.
+        """
+        blkid_uuid = self.blkid_uuid()
+        if not self.blkid or not blkid_uuid:
+            return set(), False
+        out, err, ret = self.blkid_scan()
+        if ret not in (0, 2):
+            # 2 is blkid's "nothing found", which is an answer
+            return set(), False
+        devs = set()
+        container = False
+        for line in out.splitlines():
+            words = line.split(":", 1)
+            if len(words) != 2:
+                continue
+            dev, props = words[0], words[1]
+            if 'TYPE="linux_raid_member"' in props:
+                if 'UUID="%s"' % blkid_uuid in props:
+                    devs.add(os.path.realpath(dev))
+            elif 'TYPE="isw_raid_member"' in props or 'TYPE="ddf_raid_member"' in props:
+                container = True
+        if devs:
+            return devs, True
+        if container:
+            return set(), False
+        return set(), True
+
+    def _discard_paths(self, devs):
+        """
+        Drop the paths of a multipathed device from a device set, so
+        that a member is reported by its top holder only. Both blkid
+        and mdadm report a lun and each of its paths.
+        """
+        paths = set()
+        for dev in devs:
+            _paths = set(utilities.devices.linux.dev_to_paths(dev))
+            if set([dev]) != _paths:
+                paths |= _paths
+        return devs - paths
+
     def sub_devs_inactive(self):
+        devs, authoritative = self.blkid_members()
+        if authoritative:
+            devs = self._discard_paths(devs)
+            self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
+            return devs
+        return self.sub_devs_inactive_scan()
+
+    def sub_devs_inactive_scan(self):
         devs = set()
         out, err, ret = self.mdadm_scan_v()
         if ret != 0:
@@ -448,7 +561,6 @@ class DiskMd(BaseDisk):
         if len(lines) < 2:
             return set()
         inblock = False
-        paths = set()
         for line in lines:
             if self._mdadm_scan_match(line, uuid=self.uuid):
                 inblock = True
@@ -457,13 +569,10 @@ class DiskMd(BaseDisk):
                 l = line.split("devices=")[-1].split(",")
                 l = map(lambda x: os.path.realpath(x), l)
                 for dev in l:
-                    _paths = set(utilities.devices.linux.dev_to_paths(dev))
-                    if set([dev]) != _paths:
-                        paths |= _paths
                     devs.add(dev)
                 break
         # discard paths from the list (mdadm shows both mpaths and paths)
-        devs -= paths
+        devs = self._discard_paths(devs)
 
         self.log.debug("found devs %s held by md %s" % (devs, self.uuid))
         return devs
@@ -510,6 +619,7 @@ class DiskMd(BaseDisk):
                 cmd = [self.mdadm, "--re-add", devpath, faultydev]
                 ret, out, err = self.vcall(cmd, warn_to_info=True)
                 self.clear_cache("mdadm.scan.v")
+                self.clear_cache("blkid.scan")
                 if ret != 0:
                     raise ex.Error("failed to re-add %s to %s"%(faultydev, devpath))
                 added += 1
@@ -540,6 +650,7 @@ class DiskMd(BaseDisk):
         self.log.info(" ".join(argv))
         out, err, return_code = justcall_md_create(argv=argv, input=b'no\n')
         self.clear_cache("mdadm.scan.v")
+        self.clear_cache("blkid.scan")
         self.log.info(out)
         if return_code != 0:
             raise ex.Error(err)
