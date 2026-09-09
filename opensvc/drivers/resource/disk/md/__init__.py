@@ -92,6 +92,10 @@ def justcall_mdadm_detail(*args, **kwargs):
     return justcall(*args, **kwargs)
 
 
+def justcall_mdadm_detail_scan(*args, **kwargs):
+    return justcall(*args, **kwargs)
+
+
 def justcall_mdadm_scan(*args, **kwargs):
     return justcall(*args, **kwargs)
 
@@ -240,16 +244,35 @@ class DiskMd(BaseDisk):
         return [self.md_config_file_name()]
 
     def md_devpath(self):
+        """
+        Return the path of the assembled array.
+
+        The by-id path is the answer when udev made it. When it did not,
+        the array is looked for among the ones the kernel has assembled,
+        which "mdadm --detail --scan" reads from /proc/mdstat without
+        touching a device.
+
+        The examine scan is not the fallback here, unlike in has_it():
+        this returns a path only for an array that is assembled, and an
+        assembled array is one the kernel knows, so a scan of every
+        block device could not find one that "--detail --scan" missed.
+        It would only be the 44 seconds of io this driver stopped
+        spending, and it would be spent on the passive node of a
+        failover service, which is where the array is never assembled.
+        """
         devpath = self.devpath()
         if path_exists(devpath):
             return devpath
-        out, err, ret = self.mdadm_scan_v()
+        out, err, ret = self.mdadm_detail_scan()
         devname = self.devname()
         for line in out.splitlines():
+            words = line.split()
+            if len(words) < 2 or words[0] != "ARRAY":
+                continue
             if self._mdadm_scan_match(line, uuid=self.uuid, devname=devname):
-                devname = line.split()[1]
-                if path_exists(devname):
-                    return devname
+                scanned = words[1]
+                if path_exists(scanned):
+                    return scanned
         raise ex.Error("unable to find a devpath for md")
 
     def devname(self):
@@ -447,6 +470,18 @@ class DiskMd(BaseDisk):
     @cache("mdadm.scan.v")
     def mdadm_scan_v(self):
         return justcall_mdadm_scan(argv=[self.mdadm, "-E", "--scan", "-v"])
+
+    @cache("mdadm.detail.scan")
+    def mdadm_detail_scan(self):
+        """
+        Return the (out, err, ret) of a scan of the arrays the kernel
+        has assembled.
+
+        "mdadm --detail --scan" reads /proc/mdstat and asks the kernel
+        about the arrays it names, so it costs no device io, where
+        "mdadm -E --scan" examines every block device of the node.
+        """
+        return justcall_mdadm_detail_scan(argv=[self.mdadm, "--detail", "--scan"])
 
     @cache("blkid.scan")
     def blkid_scan(self):
