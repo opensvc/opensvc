@@ -95,3 +95,33 @@ class TestLCall:
         get_updated_preexec_fn_mock = mocker.patch("utilities.proc.get_updated_preexec_fn")
         assert lcall([true_file], logging, preexec_fn=func) == 0
         get_updated_preexec_fn_mock.assert_called_once_with(func)
+
+
+@pytest.mark.ci
+class TestForkContext:
+    @staticmethod
+    @pytest.mark.skipif("fork" not in multiprocessing.get_all_start_methods(),
+                        reason="the platform has no fork")
+    def test_starts_the_children_with_fork(mocker):
+        """
+        Whatever start method python defaults to, and 3.14 defaults to
+        forkserver on linux, the children are forked.
+        """
+        mocker.patch.object(multiprocessing, "get_start_method", return_value="forkserver")
+        assert fork_context().get_start_method() == "fork"
+
+    @staticmethod
+    def test_fallback_on_the_default_context_where_there_is_no_fork(mocker):
+        """
+        Windows has no fork. The callers do not run there, so the default
+        context is good enough to hand them back.
+        """
+        default = multiprocessing.get_context()
+
+        def get_context(method=None):
+            if method == "fork":
+                raise ValueError("cannot find context for 'fork'")
+            return default
+
+        mocker.patch.object(multiprocessing, "get_context", side_effect=get_context)
+        assert fork_context() is default

@@ -385,15 +385,16 @@ class SyncDds(Sync):
         if not self.svc_syncable():
             return
         self.get_info()
-        from multiprocessing import Process, Queue
+        from utilities.proc import fork_context
+        ctx = fork_context()
         self.checksums = {}
         queues = {}
         ps = []
         self.log.info("start checksum threads. please be patient.")
         for n in self.targets:
             dst = self.dsts[n]
-            queues[n] = Queue()
-            p = Process(target=self.checksum, args=(n, dst, queues[n]))
+            queues[n] = ctx.Queue()
+            p = ctx.Process(target=self.checksum, args=(n, dst, queues[n]))
             p.start()
             ps.append(p)
         self.checksum(Env.nodename, self.snap1)
