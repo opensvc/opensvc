@@ -18,7 +18,7 @@ class Nscfg(PgMixin, BaseSvc):
             kwargs["name"] = "namespace"
         BaseSvc.__init__(self, *args, **kwargs)
 
-    @lazy
+    @property
     def kwstore(self):
         from .nscfgdict import KEYS
         return KEYS

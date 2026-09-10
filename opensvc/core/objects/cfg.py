@@ -16,7 +16,7 @@ class Cfg(DataMixin, BaseSvc):
     desc = "configuration"
     default_mode = 0o0644
 
-    @lazy
+    @property
     def kwstore(self):
         from .cfgdict import KEYS
         return KEYS

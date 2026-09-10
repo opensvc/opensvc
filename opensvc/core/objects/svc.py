@@ -3096,7 +3096,7 @@ class Svc(PgMixin, BaseSvc):
     """
     kind = "svc"
 
-    @lazy
+    @property
     def kwstore(self):
         from .svcdict import KEYS
         return KEYS
