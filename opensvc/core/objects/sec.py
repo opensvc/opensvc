@@ -23,7 +23,7 @@ class Sec(DataMixin, BaseSvc):
     desc = "secret"
     default_mode = 0o0600
 
-    @lazy
+    @property
     def kwstore(self):
         from .secdict import KEYS
         return KEYS

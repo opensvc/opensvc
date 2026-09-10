@@ -32,7 +32,7 @@ class Usr(Sec, BaseSvc):
     kind = "usr"
     desc = "user"
 
-    @lazy
+    @property
     def kwstore(self):
         from .usrdict import KEYS
         return KEYS

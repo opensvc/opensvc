@@ -20,7 +20,7 @@ import shlex
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-from multiprocessing import Process
+import multiprocessing
 
 import foreign.six as six
 
@@ -226,7 +226,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def private_cd(self):
         return self.parse_config_file(self.paths.cf)
 
-    @lazy
+    @property
     def kwstore(self):
         from .nodedict import KEYS
         return KEYS
@@ -2779,6 +2779,18 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         # noinspection PyUnresolvedReferences
         from utilities.process_title import set_process_title  # warm up for side effect
 
+        # The workers are forked, and not started by the method python picks
+        # by default. Python 3.14 made that default "forkserver" on linux,
+        # which pickles the arguments instead of inheriting them, and the
+        # service passed here does not survive that: it carries lazy caches of
+        # process-global singletons, the keyword store first of all, which
+        # come back in the child as copies of themselves that nothing else in
+        # that process shares. The first symptom was every parallel action
+        # failing with "sync#i0.options not found in the keywords dictionary",
+        # the keyword being registered in the child's own store by the driver
+        # import while the service read the copy it was pickled with.
+        ctx = multiprocessing.get_context("fork")
+
         def can_run_new_proc():
             count = 0
             for proc in data.procs.values():
@@ -2790,7 +2802,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             while not can_run_new_proc():
                 time.sleep(1)
             data.svcs[svc.path] = svc
-            data.procs[svc.path] = Process(
+            data.procs[svc.path] = ctx.Process(
                 target=self._service_action_worker,
                 name="worker_" + svc.path,
                 args=(svc, action, options),

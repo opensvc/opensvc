@@ -15,7 +15,7 @@ class Ccfg(BaseSvc):
                 pass
         BaseSvc.__init__(self, name="cluster", namespace=None, **kwargs)
 
-    @lazy
+    @property
     def kwstore(self):
         from .ccfgdict import KEYS
         return KEYS
