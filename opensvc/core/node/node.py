@@ -20,7 +20,6 @@ import shlex
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-import multiprocessing
 
 import foreign.six as six
 
@@ -52,7 +51,7 @@ from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
 from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, \
-    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
+    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str, fork_context
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.semver import Semver
@@ -2779,17 +2778,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         # noinspection PyUnresolvedReferences
         from utilities.process_title import set_process_title  # warm up for side effect
 
-        # The workers are forked, and not started by the method python picks
-        # by default. Python 3.14 made that default "forkserver" on linux,
-        # which pickles the arguments instead of inheriting them, and the
-        # service passed here does not survive that: it carries lazy caches of
-        # process-global singletons, the keyword store first of all, which
-        # come back in the child as copies of themselves that nothing else in
-        # that process shares. The first symptom was every parallel action
-        # failing with "sync#i0.options not found in the keywords dictionary",
-        # the keyword being registered in the child's own store by the driver
-        # import while the service read the copy it was pickled with.
-        ctx = multiprocessing.get_context("fork")
+        ctx = fork_context()
 
         def can_run_new_proc():
             count = 0

@@ -5,11 +5,11 @@ from __future__ import print_function
 
 import sys
 import logging
-from multiprocessing import Process
 
 import core.exceptions as ex
 import core.status
 from utilities.lazy import lazy
+from utilities.proc import fork_context
 from env import Env
 from core.resource import Resource
 
@@ -294,6 +294,7 @@ class ResourceSet(object):
             procs = {}
             self.log.info("parallel %s resources %s" % (action, ",".join(sorted([r.rid for r in resources]))))
             from utilities.process_title import set_process_title  # warm up for side effect
+            ctx = fork_context()
             for resource in resources:
                 if not resource.can_rollback and action == "rollback":
                     continue
@@ -303,7 +304,7 @@ class ResourceSet(object):
                                                            self.subset_name,
                                                            resource.rid,
                                                            action)
-                proc = Process(target=self._action_job, args=(title, resource, action,))
+                proc = ctx.Process(target=self._action_job, args=(title, resource, action,))
                 proc.start()
                 resource.log.info("action %s started in child process %d" % (action, proc.pid))
                 procs[resource.rid] = proc
