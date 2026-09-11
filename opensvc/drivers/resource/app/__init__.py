@@ -1,6 +1,7 @@
 """
 The module defining the App resource class.
 """
+import logging
 from datetime import datetime
 import os
 import stat
@@ -242,6 +243,7 @@ class App(Resource):
                  secrets_environment=None,
                  retcodes=None,
                  umask=None,
+                 stderr_loglevel="error",
                  **kwargs):
 
         Resource.__init__(self, **kwargs)
@@ -270,6 +272,7 @@ class App(Resource):
         elif start:
             self.label += ": " + os.path.basename(start.split()[0])
         self.lockfd = None
+        self.stderr_loglevel = stderr_loglevel
         try:
             # compat
             self.sort_key = ("app#%d" % int(self.start_seq), self.rid)
@@ -743,6 +746,16 @@ class App(Resource):
         }
         try:
             kwargs.update(self.common_popen_kwargs(cmd))
+            if action in ("start", "stop"):
+                if self.stderr_loglevel == "error":
+                    kwargs["errlvl"] = logging.ERROR
+                elif self.stderr_loglevel == "warn":
+                    kwargs["errlvl"] = logging.WARN
+                elif self.stderr_loglevel == "info":
+                    kwargs["errlvl"] = logging.INFO
+                elif self.stderr_loglevel == "none":
+                    kwargs["errlvl"] = logging.NOTSET
+
         except ValueError as exc:
             self.log.error("%s", exc)
             return 1

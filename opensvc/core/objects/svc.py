@@ -1017,7 +1017,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         def is_logged_action():
             if self.options.cron and not self.node.oget("node", "dblogcron"):
                 return False
-            if self.node.oget("node", "dblog") and self.node.collector_env.dbopensvc and self.node.collector_env.uuid:
+            if self.node.oget("node", "dblog") and (self.node.collector_env.dbopensvc or self.node.collector_env.feeder) and self.node.collector_env.uuid:
                 return True
             return False
 
@@ -1323,29 +1323,36 @@ class BaseSvc(Crypt, ExtConfigMixin):
             self.log.error("rollback %s failed", action)
 
     def push_begin_action(self, action, argv, begin):
-        if self.node.oc3_version() >= Semver(3, 0, 3):
+        if self.node.oc3_version() >= Semver(3, 0, 4):
             rfc_time = RFC3339()
             api_verb = "POST"
             api_path = oc3path.FEED_INSTANCE_ACTION
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
-            self.log.debug("%s %s", api_verb, api_path)
+            self.log.debug("%s %s session: %s", api_verb, api_path, Env.session_uuid)
             try:
-                data = {
+                from subprocess import list2cmdline
+                session_uuid = Env.session_uuid
+                payload = {
                     "path": self.path,
-                    "rid": ",".join(self.action_rid),
                     "action": action,
                     "argv": argv,
                     "begin": rfc_time.from_epoch(begin),
                     "cron": self.options.cron,
-                    "session_uuid": Env.session_uuid,
                     "origin": os.environ.get("OSVC_ACTION_ORIGIN", "user"),
-                    "pid": str(os.getpid()),
+                    "status_log": list2cmdline(argv),
+                    "pid": "",  # TODO: use str(os.getpid()),
+                    "rids": ",".join(self.action_rid),
+                    "session_uuid": session_uuid,
                     "version": self.node.agent_version,
                 }
-                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers,
+                status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=payload, headers=headers,
                                                                         timeout=1)
                 if status_code == 202:
-                    self.log.debug("%s %s accepted", api_verb, api_path)
+                    # api_uuid will be used during the end action for eventual dedup action
+                    # when the begin action is not yet processed by the collector backend
+                    api_uuid = response_data.get("uuid", "")
+                    self.log.debug("%s %s accepted session_id: %s with api uuid: %s", api_verb, api_path, session_uuid, api_uuid)
+                    return api_uuid
                 else:
                     self.node.oc3_assert_status_code(api_verb, api_path, status_code, response_data, expected=[202])
             except Exception:
@@ -1357,50 +1364,17 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                               begin, self.options.cron, Env.session_uuid,
                                               argv)
 
-    def push_end_action(self, action, argv, begin, end, err, logfile):
+    def push_end_action(self, data, begin, end):
         """
         Send to the collector the service status after an action, and
         the action log.
         """
-        if self.node.oc3_version() >= Semver(3, 0, 3):
+        if self.node.oc3_version() >= Semver(3, 0, 4):
             api_verb = "PUT"
             api_path = oc3path.FEED_INSTANCE_ACTION
             headers = {"Accept": "application/json", "Content-Type": "application/json"}
             self.log.debug("%s %s", api_verb, api_path)
-            data = {}
-            rfc_time = RFC3339()
             try:
-                status = "ok"
-                if err != 0:
-                    status = "err"
-
-                log_contents = ""
-                try:
-                    with open(logfile, "r") as file:
-                        log_contents = file.read()
-                except:
-                    pass
-                finally:
-                    try:
-                        os.unlink(logfile)
-                    except:
-                        pass
-
-                data = {
-                    "path": self.path,
-                    "rid": ",".join(self.action_rid),
-                    "action": action,
-                    "argv": argv,
-                    "begin": rfc_time.from_epoch(begin),
-                    "end": rfc_time.from_epoch(end),
-                    "status": status,
-                    "status_log": log_contents,
-                    "cron": self.options.cron,
-                    "session_uuid": Env.session_uuid,
-                    "origin": os.environ.get("OSVC_ACTION_ORIGIN", "user"),
-                    "pid": str(os.getpid()),
-                    "version": self.node.agent_version,
-                }
                 status_code, response_data = self.node.oc3_request_feed(api_verb, api_path, data=data, headers=headers,
                                                                         timeout=1)
                 if status_code == 202:
@@ -1422,6 +1396,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
                     replay_dir = os.path.join(Env.paths.pathtmpv, "oc3_replay")
                     os.makedirs(replay_dir, exist_ok=True)
                     replay_file_need_close = True
+                    action = data.get("action", "")
                     replay_file = tempfile.NamedTemporaryFile(mode='w+', delete=False, dir=replay_dir, suffix=".tmp",
                                                               prefix="oc3_feed_instance_action_%s.%s."% (self.name, action))
                     replay_files = sorted(glob.glob(os.path.join(replay_dir, "*")), key=lambda x: os.stat(x).st_mtime)
@@ -1451,9 +1426,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
 
         else:
             try:
-                self.node.daemon_collector_xmlrpc("end_action", self.path, action,
-                                                  begin, end, self.options.cron, Env.session_uuid,
-                                                  logfile, err)
+                self.node.daemon_collector_xmlrpc("end_action", data, begin, end)
             except Exception as exc:
                 self.log.warning("failed to send logs to the collector: %s", exc)
 
@@ -1461,6 +1434,113 @@ class BaseSvc(Crypt, ExtConfigMixin):
             logging.shutdown()
         except:
             pass
+
+    def end_action_data(self, action, argv, begin, end, alogfile, err, action_uuid):
+        """
+        end-action payload generation for shared use across OC2 and OC3
+        """
+        rfc_time = RFC3339()
+
+        payload = {
+            "path": self.path,
+            "action": action,
+            "argv": argv,
+            "rids": ",".join(self.action_rid),
+            "origin": os.environ.get("OSVC_ACTION_ORIGIN", "user"),
+            "cron": self.options.cron,
+            "version": self.node.agent_version,
+            "pid": "",  # TODO: str(os.getpid()),
+            "session_uuid": Env.session_uuid,
+            "begin": rfc_time.from_epoch(begin),
+            "end": rfc_time.from_epoch(end),
+            "status": "ok" if err == 0 else "err",
+            "status_log": "",
+            "duration": str(int(round(end - begin))),
+            "uuid": action_uuid,
+        }
+
+        name, namespace, kind = split_path(self.path)
+        with open(alogfile, 'r') as ofile:
+            log_lines = ofile.read()
+        try:
+            os.unlink(alogfile)
+        except Exception:
+            pass
+        pids = set()
+
+        """Example logfile line:
+        2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL
+        """
+
+        lines = []
+        last = {}
+        for line in log_lines.split(";;EOL\n"):
+            if line.count(";;") != 4:
+                continue
+            if ";;status_history;;" in line:
+                continue
+            rid_err = "ok"
+            date, rid, lvl, msg, pid = line.split(";;")
+            rid = rid.lower()
+            rid = rid.replace(Env.nodename+"."+kind+"."+name, "")
+            rid = rid.replace(Env.nodename+"."+name, "")
+            rid = rid.replace(Env.nodename, "")
+            rid = rid.lstrip(".")
+            subset = ""
+
+            # container:front#nginx
+            # container#nginx
+            # task
+            if ":" in rid:
+                rgrp, rid = rid.split(":")
+                if "#" in rid:
+                    subset, rname = rid.split("#")
+                    rid = rgrp + "#" + rname
+
+            date = date.split(",")[0]
+
+            # database overflow protection
+            trim_lim = 10000
+            trim_tag = " <trimmed> "
+            trim_head = trim_lim // 2
+            trim_tail = trim_head-len(trim_tag)
+            if len(msg) > trim_lim:
+                msg = msg[:trim_head]+" <trimmed> "+msg[-trim_tail:]
+
+            pids |= {pid}
+            if lvl is None or lvl == "DEBUG":
+                continue
+            elif lvl == "ERROR":
+                rid_err = "err"
+            elif lvl == "WARNING":
+                rid_err = "warn"
+
+            try:
+                if last:
+                    if last.get("pid") == pid and last.get("rid") == rid and last.get("status") == rid_err:
+                        last["status_log"] += "\n"+msg
+                        continue
+                    else:
+                        lines.append(last)
+            except Exception as exc:
+                print(exc)
+                continue
+
+            last = {
+                  "begin": date,
+                  "pid": pid,
+                  "rid": rid,
+                  "status": rid_err,
+                  "status_log": msg,
+                  "subset": subset
+            }
+
+        if last:
+            lines.append(last)
+
+        payload["lines"] = lines
+
+        return payload
 
     def do_logged_action(self, action, options):
         """
@@ -1472,12 +1552,13 @@ class BaseSvc(Crypt, ExtConfigMixin):
         begin = time.time()
 
         # Provision a database entry to store action log later
+        argv = ["undefined"]  # will be replaced in the next try except block
         try:
             argv = sys.argv[1:]
             if has_option("--value", argv):
                 drop_option("--value", argv, drop_value=True)
                 argv.append("--value=xxx")
-            self.push_begin_action(action, argv, begin)
+            api_uuid = self.push_begin_action(action, argv, begin)
         except Exception as exc:
             self.log.warning("failed to init logs on the collector: %s", exc)
             self.log_action_header(action, options)
@@ -1488,12 +1569,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
                                               prefix=self.name+'.'+action)
         actionlogfile = tmpfile.name
         tmpfile.close()
-        if self.node.oc3_version() >= Semver(1, 0, 11):
-            fmt = "%(asctime)s %(levelname)s [%(process)d] %(message)s"
-            actionlogformatter = RFC3339Formatter(fmt)
-        else:
-            fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
-            actionlogformatter = logging.Formatter(fmt)
+
+        fmt = "%(asctime)s;;%(name)s;;%(levelname)s;;%(message)s;;%(process)d;;EOL"
+        actionlogformatter = logging.Formatter(fmt)
 
         actionlogfilehandler = logging.FileHandler(actionlogfile)
         actionlogfilehandler.setFormatter(actionlogformatter)
@@ -1507,7 +1585,8 @@ class BaseSvc(Crypt, ExtConfigMixin):
         actionlogfilehandler.close()
         self.logger.removeHandler(actionlogfilehandler)
         end = time.time()
-        self.push_end_action(action, argv, begin, end, err, actionlogfile)
+        data = self.end_action_data(action, argv, begin, end, actionlogfile, err, api_uuid)
+        self.push_end_action(data, begin, end)
         return err
 
     def log_action_obfuscate_secret(self, options):

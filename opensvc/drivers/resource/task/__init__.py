@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import json
+import logging
 import os
 import time
 import sys
@@ -153,6 +154,7 @@ class BaseTask(Resource):
                  secrets_environment=None,
                  check=None,
                  max_parallel=1,
+                 stderr_loglevel="",
                  **kwargs):
         super(BaseTask, self).__init__(type=type, **kwargs)
         self.command = command
@@ -165,6 +167,7 @@ class BaseTask(Resource):
         self.timeout = timeout
         self.confirmation = confirmation
         self.log_outputs = log
+        self.stderr_loglevel = stderr_loglevel
         self.environment = environment
         self.configs_environment = configs_environment
         self.secrets_environment = secrets_environment
@@ -304,6 +307,14 @@ class BaseTask(Resource):
         """
         if self.log_outputs:
             kwargs["logger"] = self.log
+            if self.stderr_loglevel == "error":
+                kwargs["errlvl"] = logging.ERROR
+            elif self.stderr_loglevel == "warn":
+                kwargs["errlvl"] = logging.WARN
+            elif self.stderr_loglevel == "info":
+                kwargs["errlvl"] = logging.INFO
+            elif self.stderr_loglevel == "none":
+                kwargs["errlvl"] = logging.NOTSET
         else:
             kwargs["logger"] = None
         return lcall(*args, **kwargs)
