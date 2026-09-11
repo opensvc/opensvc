@@ -106,7 +106,20 @@ class HbDisk(Hb):
     def hb_fo(self):
         try:
             fd = os.open(self.dev, self.flags)
-            fo = os.fdopen(fd, 'rb+')
+            # buffering=0 is required by the O_DIRECT flag set for a linux
+            # block device: a buffered object reads and writes through an
+            # internal buffer of its own, which is not page aligned, and
+            # O_DIRECT refuses an unaligned buffer with EINVAL. Unbuffered,
+            # readinto() and write() are handed the mmap buffers of this
+            # class, which are page aligned.
+            #
+            # A buffered object only hands the caller buffer to the fd when
+            # it is at least as large as its own, so meta_slot_buff, being
+            # exactly io.DEFAULT_BUFFER_SIZE long, used to be handed over and
+            # slot_buff, being larger, still is. Python 3.14 raised that
+            # default from 8kB to 128kB, which left the meta reads going
+            # through the unaligned buffer and failing.
+            fo = os.fdopen(fd, 'rb+', buffering=0)
         except OSError as exc:
             if exc.errno == errno.EINVAL:
                 raise ex.AbortAction("%s directio is not supported" % self.dev)

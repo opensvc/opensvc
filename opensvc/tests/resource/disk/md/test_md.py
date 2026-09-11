@@ -50,6 +50,16 @@ def mdadm_scan(mocker):
     return mocker.patch(LIB_NAME + '.justcall_mdadm_scan', return_value=(mdadm_scan_out, '', 0))
 
 
+mdadm_detail_scan_out = """ARRAY /dev/md/s.disk.1 metadata=1.2 name=node1:s.disk.1 UUID=s-uuid
+ARRAY /dev/md/ss.disk.1 metadata=1.2 name=node1:ss.disk.1 UUID=ss.uuid"""
+
+
+@pytest.fixture(scope='function')
+def mdadm_detail_scan(mocker):
+    return mocker.patch(LIB_NAME + '.justcall_mdadm_detail_scan',
+                        return_value=(mdadm_detail_scan_out, '', 0))
+
+
 @pytest.fixture(scope='function')
 def mdadm_detail(mocker):
     return mocker.patch(LIB_NAME + '.justcall_mdadm_detail', return_value=(detail_out, '', 0))
@@ -255,7 +265,7 @@ class TestDiskMdStatus:
         assert md_with_uuid._status() == DOWN
 
     @staticmethod
-    @pytest.mark.usefixtures('mdadm_scan')
+    @pytest.mark.usefixtures('mdadm_scan', 'mdadm_detail_scan')
     @pytest.mark.parametrize(
         'devs',
         [['/dev/disk/by-id/md-uuid-s-uuid'],
@@ -281,7 +291,7 @@ class TestDiskMdStatus:
         assert md_with_uuid._status() == DOWN
 
     @staticmethod
-    @pytest.mark.usefixtures('mdadm_detail', 'mdadm_scan')
+    @pytest.mark.usefixtures('mdadm_detail', 'mdadm_scan', 'mdadm_detail_scan')
     @pytest.mark.parametrize(
         'devs',
         [['/dev/disk/by-id/md-uuid-s-uuid'],
@@ -459,3 +469,62 @@ class TestDiskMdBlkid:
                      side_effect=lambda dev: ['/dev/sdx'] if dev == '/dev/loop4' else [dev])
         assert md_blkid.sub_devs_inactive() == {'/dev/loop4', '/dev/loop5'}
         assert mdadm_scan.call_count == 0
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')  # for cache
+@pytest.mark.usefixtures('has_mdadm')
+class TestDiskMdDevpath:
+    """
+    md_devpath() answers with the path of an assembled array. It asked
+    "mdadm -E --scan", which examines every block device of the node,
+    where "mdadm --detail --scan" asks the kernel about the arrays it
+    has already assembled.
+    """
+
+    @staticmethod
+    def test_the_by_id_path_is_the_answer_when_udev_made_it(
+            mdadm_scan, mdadm_detail_scan, has_files, md_with_uuid):
+        has_files(['/dev/disk/by-id/md-uuid-s-uuid'])
+        assert md_with_uuid.md_devpath() == '/dev/disk/by-id/md-uuid-s-uuid'
+        assert mdadm_scan.call_count == 0
+        assert mdadm_detail_scan.call_count == 0
+
+    @staticmethod
+    def test_the_array_is_found_without_examining_the_devices(
+            mdadm_scan, mdadm_detail_scan, has_files, md_with_uuid):
+        has_files(['/dev/md/s.disk.1'])
+        assert md_with_uuid.md_devpath() == '/dev/md/s.disk.1'
+        assert mdadm_detail_scan.call_count == 1
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_an_absent_array_does_not_fall_back_to_the_examine_scan(
+            mdadm_scan, mdadm_detail_scan, has_files, md_with_uuid):
+        # The passive node of a failover service: the array is assembled
+        # nowhere here, and this is the case the examine scan was costing
+        # tens of seconds of io for.
+        has_files([])
+        md_with_uuid.uuid = 'not-a-uuid-of-this-node'
+        with pytest.raises(Error):
+            md_with_uuid.md_devpath()
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_an_array_named_by_a_path_that_is_gone_is_not_the_answer(
+            mdadm_scan, mdadm_detail_scan, has_files, md_with_uuid):
+        # The scan names it, udev has not made the node.
+        has_files([])
+        with pytest.raises(Error):
+            md_with_uuid.md_devpath()
+        assert mdadm_detail_scan.call_count == 1
+        assert mdadm_scan.call_count == 0
+
+    @staticmethod
+    def test_the_lines_that_name_no_array_are_skipped(
+            mdadm_scan, mdadm_detail_scan, has_files, md_with_uuid):
+        mdadm_detail_scan.return_value = (
+            'mdadm: cannot open /dev/sdz: No such device\n'
+            + mdadm_detail_scan_out, '', 0)
+        has_files(['/dev/md/s.disk.1'])
+        assert md_with_uuid.md_devpath() == '/dev/md/s.disk.1'

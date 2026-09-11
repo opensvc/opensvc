@@ -20,7 +20,6 @@ import shlex
 import sys
 import time
 from errno import ECONNREFUSED, EPIPE
-from multiprocessing import Process
 
 import foreign.six as six
 
@@ -52,7 +51,7 @@ from utilities.lazy import (lazy, lazy_initialized, set_lazy, unset_all_lazy,
                             unset_lazy)
 from utilities.lock import LOCK_EXCEPTIONS
 from utilities.proc import call, justcall, vcall, which, check_privs, daemon_process_running, drop_option, find_editor, \
-    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str
+    init_locale, does_call_cmd_need_shell, get_call_cmd_from_str, fork_context
 from utilities.files import assert_file_exists, assert_file_is_root_only_writeable, makedirs
 from utilities.render.color import formatter
 from utilities.semver import Semver
@@ -226,7 +225,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def private_cd(self):
         return self.parse_config_file(self.paths.cf)
 
-    @lazy
+    @property
     def kwstore(self):
         from .nodedict import KEYS
         return KEYS
@@ -2779,6 +2778,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         # noinspection PyUnresolvedReferences
         from utilities.process_title import set_process_title  # warm up for side effect
 
+        ctx = fork_context()
+
         def can_run_new_proc():
             count = 0
             for proc in data.procs.values():
@@ -2790,7 +2791,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             while not can_run_new_proc():
                 time.sleep(1)
             data.svcs[svc.path] = svc
-            data.procs[svc.path] = Process(
+            data.procs[svc.path] = ctx.Process(
                 target=self._service_action_worker,
                 name="worker_" + svc.path,
                 args=(svc, action, options),

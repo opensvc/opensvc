@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import locale
 import logging
+import multiprocessing
 import os
 import select
 import shlex
@@ -48,6 +49,34 @@ def which(program):
                     return candidate
 
     return
+
+
+def fork_context():
+    """
+    The multiprocessing context to start the children of an action with.
+
+    Those children are forked, and not started by the method python picks by
+    default. Python 3.14 made that default "forkserver" on linux, where it was
+    "fork". A forkserver child is handed a pickle of the target and of its
+    arguments, where a forked child inherits the objects themselves, and what
+    is handed here does not survive that trip.
+
+    An object and its resources carry lazy caches of things that do not
+    pickle, the process group driver module first of all, so the pickling
+    raises "cannot pickle 'module' object". Those that do pickle come back in
+    the child as copies of process globals that nothing else in that process
+    shares, the keyword store first of all, so the child reads a store the
+    driver imports of that same child do not register their keywords in.
+
+    Platforms with no fork, windows, get the default context. Nothing that
+    calls this runs there: the parallel resource set actions are serialized on
+    windows, and the other callers hand a child a nested function, which no
+    pickle-based start method has ever been able to carry.
+    """
+    try:
+        return multiprocessing.get_context("fork")
+    except ValueError:
+        return multiprocessing.get_context()
 
 
 def oom_score_adj(pid="self", value=0):

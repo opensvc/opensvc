@@ -3096,7 +3096,7 @@ class Svc(PgMixin, BaseSvc):
     """
     kind = "svc"
 
-    @lazy
+    @property
     def kwstore(self):
         from .svcdict import KEYS
         return KEYS
@@ -4864,7 +4864,7 @@ class Svc(PgMixin, BaseSvc):
         else:
             try:
                 # noinspection PyUnresolvedReferences
-                from multiprocessing import Process
+                from utilities.proc import fork_context
                 parallel = True
             except ImportError:
                 parallel = False
@@ -4875,7 +4875,7 @@ class Svc(PgMixin, BaseSvc):
                     raise ex.Error("start aborted due to resource %s "
                                    "conflict" % resource.rid)
         else:
-            from multiprocessing import Process
+            from utilities.proc import fork_context
             from utilities.process_title import set_process_title
 
             def wrapper(proc_title, func):
@@ -4887,10 +4887,11 @@ class Svc(PgMixin, BaseSvc):
                     sys.exit(1)
 
             procs = {}
+            ctx = fork_context()
             for resource in resources:
                 title = "om %s --rid %s check abort start" % (resource.svc.path, resource.rid)
                 # noinspection PyUnboundLocalVariable
-                proc = Process(target=wrapper, args=(title, resource.abort_start))
+                proc = ctx.Process(target=wrapper, args=(title, resource.abort_start))
                 proc.start()
                 procs[resource.rid] = proc
 
