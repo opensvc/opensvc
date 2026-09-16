@@ -141,6 +141,13 @@ KEYWORDS = BASE_KEYWORDS + [
         "at": True,
         "text": "Change the working directory to the specified location instead of the default ``<pathtmp>``."
     },
+    {
+        "keyword": "stderr_loglevel",
+        "at": True,
+        "candidates": ("error", "warn", "info", "none"),
+        "default": "error",
+        "text": "Log the start and stop script stderr lines at this level.",
+    },
 ]
 
 KEYS.register_driver(

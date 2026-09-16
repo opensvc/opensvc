@@ -316,159 +316,99 @@ class CollectorRpc(object):
     def begin_action(self, svcname, action, version, begin, cron, sid, argv):
         from subprocess import list2cmdline
         args = [
-            ['svcname',
-             'action',
-             'hostname',
-             'sid',
-             'version',
-             'begin',
-             'status_log',
-             'cron'],
-            [str(svcname),
-             str(action),
-             str(Env.nodename),
-             sid,
-             str(version),
-             str(datetime.fromtimestamp(begin).strftime("%Y-%m-%d %H:%M:%S")),
-             list2cmdline(argv),
-             '1' if cron else '0']
+            [
+                'svcname',
+                'action',
+                'hostname',
+                'sid',
+                'version',
+                'begin',
+                'status_log',
+                'cron',
+                'log_type',
+            ],
+            [
+                str(svcname),
+                str(action),
+                str(Env.nodename),
+                sid,
+                str(version),
+                str(datetime.fromtimestamp(begin).strftime("%Y-%m-%d %H:%M:%S")),
+                list2cmdline(argv),
+                '1' if cron else '0',
+                'status',  # begin and final svc action entries must have the "status" value for log_type
+            ]
         ]
         args += [(self.node.collector_env.uuid, Env.nodename)]
         self.proxy.begin_action(*args)
 
-    def end_action(self, path, action, begin, end, cron, sid, alogfile, err):
-        if err == 0:
-            err = "ok"
-        else:
-            err = "err"
-        rid = None
-        rid_err = None
-        pid = None
-        msg = None
-        name, namespace, kind = split_path(path)
-        with open(alogfile, 'r') as ofile:
-            lines = ofile.read()
-        try:
-            os.unlink(alogfile)
-        except Exception:
-            pass
-        pids = set()
-
-        """Example logfile line:
-        2009-11-11 01:03:25,252;;DISK.VG;;INFO;;unxtstsvc01_data is already up;;10200;;EOL
-        """
-        vars = ["svcname",
-                "action",     # 1
+    def end_action(self, data, begin, end):
+        svcname = data.get("path", "")
+        action = data.get("action", "")
+        hostname = str(Env.nodename)
+        sid = data.get("session_uuid", "")
+        cron = data.get("cron")
+        status = data.get("status", "")
+        lines = data.get("lines", [])
+        if len(lines) > 0:
+            vars = [
+                "svcname",
+                "action",
                 "hostname",
                 "sid",
-                "pid",        # 4
-                "rid",        # 5
+                "pid",
+                "rid",
                 "subset",
                 "begin",
-                "end",
-                "status_log", # 9
-                "status",     # 10
-                "cron"]
-        vals = []
-        last = []
-        for line in lines.split(";;EOL\n"):
-            if line.count(";;") != 4:
-                continue
-            if ";;status_history;;" in line:
-                continue
-            rid_err = "ok"
-            date, rid, lvl, msg, pid = line.split(";;")
-            rid = rid.lower()
-            rid = rid.replace(Env.nodename+"."+kind+"."+name, "")
-            rid = rid.replace(Env.nodename+"."+name, "")
-            rid = rid.replace(Env.nodename, "")
-            rid = rid.lstrip(".")
-            subset = ""
-
-            # container:front#nginx
-            # container#nginx
-            # task
-            if ":" in rid:
-                rgrp, rid = rid.split(":")
-                if "#" in rid:
-                    subset, rname = rid.split("#")
-                    rid = rgrp + "#" + rname
-
-            date = date.split(",")[0]
-
-            # database overflow protection
-            trim_lim = 10000
-            trim_tag = " <trimmed> "
-            trim_head = trim_lim // 2
-            trim_tail = trim_head-len(trim_tag)
-            if len(msg) > trim_lim:
-                msg = msg[:trim_head]+" <trimmed> "+msg[-trim_tail:]
-
-            pids |= {pid}
-            if lvl is None or lvl == "DEBUG":
-                continue
-            elif lvl == "ERROR":
-                rid_err = "err"
-            elif lvl == "WARNING":
-                rid_err = "warn"
-
-            try:
-                if last:
-                    if last[1] == action and last[4] == pid and last[5] == rid and last[10] == rid_err:
-                        last[9] += "\n"+msg
-                        continue
-                    else:
-                        vals.append(last)
-            except Exception as exc:
-                print(exc)
-                continue
-            
-            last = [
-                path,
-                action,
-                Env.nodename,
-                sid,
-                pid,
-                rid,
-                subset,
-                date,
-                "",
-                msg,
-                rid_err,
-                "1" if cron else "0"
+                "status_log",
+                "status",
+                "cron",
             ]
 
-        if last:
-            vals.append(last)
+            vals = [
+                [
+                    svcname,
+                    action,
+                    hostname,
+                    sid,
+                    l.get("pid"),
+                    l.get("rid", ""),
+                    l.get("subset", ""),
+                    l.get("begin", ""),
+                    l.get("status_log", ""),
+                    l.get("status", ""),
+                    cron,
+                ]
+                for l in lines
+            ]
 
-        if len(vals) > 0:
-            args = [vars, vals]
-            args += [(self.node.collector_env.uuid, Env.nodename)]
+            args = [vars, vals, (self.node.collector_env.uuid, Env.nodename)]
             self.proxy.res_action_batch(*args)
 
-        """Complete the wrap-up database entry
-        """
-
-        duration_in_second = int(round(end - begin))
-        args = [
-            ['svcname',
-             'action',
-             'hostname',
-             'begin',
-             'end',
-             'time',
-             'status',
-             'cron'],
-            [str(path),
-             str(action),
-             str(Env.nodename),
-             datetime.fromtimestamp(begin).strftime("%Y-%m-%d %H:%M:%S"),
-             datetime.fromtimestamp(end).strftime("%Y-%m-%d %H:%M:%S"),
-             str(duration_in_second),
-             str(err),
-             '1' if cron else '0']
+        # Set the svc action entry with the final status of action
+        vars = [
+            'svcname',
+            'action',
+            'hostname',
+            'begin',
+            'end',
+            'time',
+            'status',
+            'log_type',
+            'cron',
         ]
-        args += [(self.node.collector_env.uuid, Env.nodename)]
+        vals = [
+            svcname,
+            action,
+            hostname,
+            datetime.fromtimestamp(begin).strftime("%Y-%m-%d %H:%M:%S"),  # begin
+            datetime.fromtimestamp(end).strftime("%Y-%m-%d %H:%M:%S"),  # end
+            str(int(round(end - begin))),  # time
+            status,  # status: the action status
+            "status",  # log_type: begin and final svc action entries must have the "status" value
+            cron,
+        ]
+        args = [vars, vals, (self.node.collector_env.uuid, Env.nodename)]
         self.proxy.end_action(*args)
 
     def svcmon_update_combo(self, g_vars, g_vals, r_vars, r_vals):

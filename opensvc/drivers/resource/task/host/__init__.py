@@ -108,7 +108,15 @@ KEYWORDS = BASE_KEYWORDS + [
         "at": True,
         "text": ""
     },
+    {
+        "keyword": "stderr_loglevel",
+        "at": True,
+        "candidates": ("error", "warn", "info", "none"),
+        "default": "error",
+        "text": "Log the task script stderr lines at this level.",
+    },
 ]
+
 
 KEYS.register_driver(
     DRIVER_GROUP,
