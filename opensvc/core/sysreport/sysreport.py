@@ -396,11 +396,16 @@ class BaseSysReport(object):
                 l.append(_fpath)
         return l
 
+    def use_oc3(self):
+        from utilities.semver import Semver
+        return self.node.oc3_version() >= Semver(3, 0, 1)
+
     def sysreport(self, force=False):
-        self.node.collector.init(self.send_rpc)
-        if self.node.collector.proxy is None:
-            print("no collector connexion. abort sysreport")
-            return 1
+        if not self.use_oc3():
+            self.node.collector.init(self.send_rpc)
+            if self.node.collector.proxy is None:
+                print("no collector connexion. abort sysreport")
+                return 1
         self.collect()
         self.delete_collected(self.deleted)
         self.write_stat(force=force)
@@ -432,12 +437,15 @@ class BaseSysReport(object):
     def send(self, force=False):
         if force:
             to_send = self.full
-            lstree_data = self.node.collector.call(self.lstree_rpc)
-            if lstree_data is None:
-                raise ex.Error("can not get lstree from collector")
-            lstree_data = self.rel_paths("", lstree_data, posix=True)
-            collected = self.rel_paths("", self.collected(), posix=True)
-            self.deleted = sorted(list(set(lstree_data) - set(os.sep + "stat") - set(collected)))
+            if self.node.collector_env.has_oc2:
+                lstree_data = self.node.collector.call(self.lstree_rpc)
+                if lstree_data is None:
+                    raise ex.Error("can not get lstree from collector")
+                lstree_data = self.rel_paths("", lstree_data, posix=True)
+                collected = self.rel_paths("", self.collected(), posix=True)
+                self.deleted = sorted(list(set(lstree_data) - set(os.sep + "stat") - set(collected)))
+            else:
+                print("no oc2 collector defined (node.dbopensvc): skip the collector side deleted files detection")
         else:
             to_send = self.changed
             self.changed_report()
@@ -455,8 +463,7 @@ class BaseSysReport(object):
             tmpf = None
 
         print("sending sysreport")
-        from utilities.semver import Semver
-        if self.node.oc3_version() >= Semver(3, 0, 1):
+        if self.use_oc3():
             self._oc3_send(tmpf, self.deleted)
         else:
             self.node.collector.call(self.send_rpc, tmpf, self.deleted)

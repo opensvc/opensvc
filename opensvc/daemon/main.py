@@ -479,7 +479,7 @@ class Daemon(object):
     @staticmethod
     def _need_collector():
         return (shared.NODE and
-                (shared.NODE.collector_env.dbopensvc or shared.NODE.collector_env.feeder) and
+                shared.NODE.collector_env.enabled and
                 shared.NODE.collector_env.uuid)
 
     def init_nodeconf(self):

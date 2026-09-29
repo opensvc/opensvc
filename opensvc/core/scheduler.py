@@ -96,6 +96,12 @@ class SchedExcluded(Exception):
 class SchedOpts(object):
     """
     The class storing a task schedule options.
+
+    req_collector:
+      False: the task does not need a collector
+      True:  the task needs a collector, oc2 (node.dbopensvc) or oc3 (node.collector)
+      "oc2": the task needs an oc2 collector (node.dbopensvc)
+      "oc3": the task needs an oc3 collector (node.collector)
     """
     def __init__(self, section,
                  fname=None,

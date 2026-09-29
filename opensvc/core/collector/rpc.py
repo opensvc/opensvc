@@ -110,7 +110,7 @@ class CollectorRpc(object):
         fn = args[0]
         self.init(fn)
         if self.node.collector_env.dbopensvc is None:
-            return {"ret": 1, "msg": "no collector defined. set 'dbopensvc' in node.conf"}
+            return {"ret": 1, "msg": "no oc2 collector defined. set 'dbopensvc' in node.conf"}
         if len(self.proxy_methods) == 0:
             return
         if len(args) > 1:

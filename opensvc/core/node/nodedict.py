@@ -410,13 +410,20 @@ KEYWORDS = [
         "section": "node",
         "keyword": "dbopensvc",
         "example": "https://collector.opensvc.com",
-        "text": "Set the uri of the collector main xmlrpc server. The path part of the uri can be left unspecified. If not set, the agent does not try to communicate with a collector."
+        "text": "Set the uri of the oc2 collector main xmlrpc server. The path part of the uri can be left unspecified."+
+                " If not set, the agent does not try to communicate with an oc2 collector. This keyword is independent of"+
+                " :kw:`collector`: it is only needed for the features still served by an oc2 collector (compliance, stats,"+
+                " checks, patches, storage arrays, collector rest api commands). Set to ``none`` to explicitly disable"+
+                " the oc2 collector calls."
     },
     {
         "section": "node",
         "keyword": "collector",
         "example": "https://collector.opensvc.com",
-        "text": "The system enables OpenSVC Collector 3 calls conditional upon the detection of the Collector 3 environment. If collector_feeder or collector_server are not explicitly defined, they are derived from this value."
+        "text": "The system enables OpenSVC Collector 3 calls conditional upon the detection of the Collector 3 environment."+
+                " If collector_feeder or collector_server are not explicitly defined, they are derived from this value."+
+                " This keyword is sufficient to enable the oc3 collector feeds, the daemon collector thread and"+
+                " the oc3 capable scheduled tasks: :kw:`dbopensvc` is not required."
     },
     {
         "section": "node",
