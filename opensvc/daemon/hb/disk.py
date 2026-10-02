@@ -427,8 +427,13 @@ class HbDiskRx(HbDisk):
                     #                 nodename)
                     continue
                 if _nodename != nodename:
-                    self.log.warning("node %s has written its data in node %s "
-                                     "reserved slot", _nodename, nodename)
+                    slot = data["slot"]
+                    if _nodename == Env.nodename:
+                        self.log.warning("slot %d reassigned and ignored: %s -> %s (local node)",
+                                         slot, nodename, nodename)
+                        continue
+                    self.log.warning("slot %s reassigned: %s -> %s",
+                                     slot, nodename, nodename)
                     nodename = _nodename
                 updated = slot_data["updated"]
                 last_updated = self.last_updated.get(nodename)
