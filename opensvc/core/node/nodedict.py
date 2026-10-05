@@ -38,6 +38,7 @@ BASE_SECTIONS = [
     "sym",
     "rotate_root_pw",
     "listener",
+    "collector",
     "syslog",
     "stats_collection",
     "reboot",
@@ -412,7 +413,7 @@ KEYWORDS = [
         "example": "https://collector.opensvc.com",
         "text": "Set the uri of the oc2 collector main xmlrpc server. The path part of the uri can be left unspecified."+
                 " If not set, the agent does not try to communicate with an oc2 collector. This keyword is independent of"+
-                " :kw:`collector`: it is only needed for the features still served by an oc2 collector (compliance, stats,"+
+                " :kw:`collector.url`: it is only needed for the features still served by an oc2 collector (compliance, stats,"+
                 " checks, patches, storage arrays, collector rest api commands). Set to ``none`` to explicitly disable"+
                 " the oc2 collector calls."
     },
@@ -420,26 +421,54 @@ KEYWORDS = [
         "section": "node",
         "keyword": "collector",
         "example": "https://collector.opensvc.com",
-        "text": "The system enables OpenSVC Collector 3 calls conditional upon the detection of the Collector 3 environment."+
-                " If collector_feeder or collector_server are not explicitly defined, they are derived from this value."+
-                " This keyword is sufficient to enable the oc3 collector feeds, the daemon collector thread and"+
-                " the oc3 capable scheduled tasks: :kw:`dbopensvc` is not required."
+        "text": "Deprecated, replaced by :kw:`collector.url`. Still used when :kw:`collector.url` is not set."
     },
     {
         "section": "node",
         "keyword": "collector_feeder",
         "example": "https://collector.opensvc.com/feeder",
-        "text": "OpenSVC enables Collector v3 feeder calls upon detection of a collector v3 instance. When the feeder path is undefined, the system automatically constructs it using the format: node.collector + /feeder."
+        "text": "Deprecated, replaced by :kw:`collector.feeder`. Still used when :kw:`collector.feeder` is not set."
     },
     {
         "section": "node",
         "keyword": "collector_server",
         "example": "https://collector.opensvc.com/server",
-        "text": "OpenSVC enables Collector v3 server calls upon detection of a collector v3 instance. When the server path is undefined, the system automatically constructs it using the format: node.collector + /server."
+        "text": "Deprecated, replaced by :kw:`collector.server`. Still used when :kw:`collector.server` is not set."
     },
     {
         "section": "node",
         "keyword": "collector_timeout",
+        "convert": "duration",
+        "at": True,
+        "default": 5,
+        "text": "Deprecated, replaced by :kw:`collector.timeout`. Still used when :kw:`collector.timeout` is not set."
+    },
+    {
+        "section": "collector",
+        "keyword": "url",
+        "example": "https://collector.opensvc.com",
+        "text": "The system enables OpenSVC Collector 3 calls conditional upon the detection of the Collector 3 environment."+
+                " If :kw:`collector.feeder` or :kw:`collector.server` are not explicitly defined, they are derived from this value."+
+                " This keyword is sufficient to enable the oc3 collector feeds, the daemon collector thread and"+
+                " the oc3 capable scheduled tasks: :kw:`node.dbopensvc` is not required."
+    },
+    {
+        "section": "collector",
+        "keyword": "feeder",
+        "example": "https://collector.opensvc.com/feeder",
+        "default_text": ":kw:`collector.url` + /feeder",
+        "text": "OpenSVC enables Collector v3 feeder calls upon detection of a collector v3 instance. When the feeder path is undefined, the system automatically constructs it using the format: :kw:`collector.url` + /feeder."
+    },
+    {
+        "section": "collector",
+        "keyword": "server",
+        "example": "https://collector.opensvc.com/server",
+        "default_text": ":kw:`collector.url` + /server",
+        "text": "OpenSVC enables Collector v3 server calls upon detection of a collector v3 instance. When the server path is undefined, the system automatically constructs it using the format: :kw:`collector.url` + /server."
+    },
+    {
+        "section": "collector",
+        "keyword": "timeout",
         "convert": "duration",
         "at": True,
         "default": 5,

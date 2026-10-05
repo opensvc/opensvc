@@ -590,7 +590,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         """
         Return the collector connection elements parsed from the node config
         node.uuid, node.dbopensvc, node.dbcompliance (oc2) and
-        node.collector, node.collector_server, node.collector_feeder (oc3)
+        collector.url, collector.server, collector.feeder, collector.timeout (oc3)
         as a Storage().
         """
         data = Storage()
@@ -656,13 +656,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.uuid = ""
 
-        collector = self.oget("node", "collector")
+        collector = self.collector_oget("url", "collector")
         if collector:
             data.collector = collector
         else:
             data.collector = ""
 
-        collector_server = self.oget("node", "collector_server")
+        collector_server = self.collector_oget("server", "collector_server")
         if collector_server:
             data.server = collector_server
         elif collector:
@@ -670,7 +670,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.server = ""
 
-        collector_feeder = self.oget("node", "collector_feeder")
+        collector_feeder = self.collector_oget("feeder", "collector_feeder")
         if collector_feeder:
             data.feeder = collector_feeder
         elif collector:
@@ -678,12 +678,12 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.feeder = ""
 
-        collector_timeout = self.oget("node", "collector_timeout")
+        collector_timeout = self.collector_oget("timeout", "collector_timeout")
         if collector_timeout > 20:
             collector_timeout = 20
         data.timeout = collector_timeout
 
-        # oc2 (node.dbopensvc) and oc3 (node.collector*) are independent
+        # oc2 (node.dbopensvc) and oc3 (collector.*) are independent
         # endpoints. 'dbopensvc = none' explicitly disables oc2.
         data.has_oc2 = bool(data.dbopensvc) and \
             str(url_oc2).lower() != "none" and \
@@ -693,6 +693,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         return data
 
+    def collector_oget(self, option, deprecated_option):
+        """
+        Return the collector.<option> value when set, else the value of the
+        deprecated node.<deprecated_option> it replaces, or its default.
+        """
+        try:
+            return self.conf_get("collector", option)
+        except ex.OptNotFound:
+            return self.oget("node", deprecated_option)
+
     def collector_ok(self, req_collector):
         """
         Return True if the collector requirement of a scheduler task is
@@ -701,7 +711,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         req_collector:
           False: no requirement
           "oc2": needs node.dbopensvc
-          "oc3": needs node.collector or node.collector_feeder
+          "oc3": needs collector.url or collector.feeder
           True:  needs any of the above
         """
         if not req_collector:
@@ -3116,7 +3126,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         it will raise if it can't decode the http response, or if it can't get http status code
 
-        When timeout is None, the request will use timeout value from the node configuration kw: node.collector_timeout.
+        When timeout is None, the request will use timeout value from the node configuration kw: collector.timeout.
         When timeout is 0, the request will wait forever.
 
         Returns:

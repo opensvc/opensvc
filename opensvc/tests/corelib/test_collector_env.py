@@ -82,6 +82,65 @@ class TestCollectorEnv:
 
 @pytest.mark.ci
 @pytest.mark.usefixtures("osvc_path_tests")
+class TestCollectorSection:
+    @staticmethod
+    def test_collector_url():
+        write_node_conf("\n[collector]\nurl = https://collector.localdomain\n")
+        env = Node().collector_env
+        assert env.collector == "https://collector.localdomain"
+        assert env.feeder == "https://collector.localdomain/feeder"
+        assert env.server == "https://collector.localdomain/server"
+        assert env.timeout == 5
+        assert env.has_oc2 is False
+        assert env.has_oc3 is True
+        assert env.enabled is True
+
+    @staticmethod
+    def test_collector_feeder_server_timeout():
+        write_node_conf("\n[collector]\n"
+                        "url = https://collector.localdomain\n"
+                        "feeder = https://feeder.localdomain/feeder\n"
+                        "server = https://server.localdomain/server\n"
+                        "timeout = 10s\n")
+        env = Node().collector_env
+        assert env.feeder == "https://feeder.localdomain/feeder"
+        assert env.server == "https://server.localdomain/server"
+        assert env.timeout == 10
+
+    @staticmethod
+    def test_collector_timeout_max():
+        write_node_conf("\n[collector]\nurl = https://collector.localdomain\ntimeout = 1m\n")
+        assert Node().collector_env.timeout == 20
+
+    @staticmethod
+    def test_collector_section_overrides_deprecated_node_keywords():
+        write_node_conf("collector = https://old.localdomain\n"
+                        "collector_feeder = https://old.localdomain/feeder\n"
+                        "collector_server = https://old.localdomain/server\n"
+                        "collector_timeout = 7s\n"
+                        "\n[collector]\n"
+                        "url = https://new.localdomain\n"
+                        "feeder = https://new.localdomain/feeder\n"
+                        "server = https://new.localdomain/server\n"
+                        "timeout = 9s\n")
+        env = Node().collector_env
+        assert env.collector == "https://new.localdomain"
+        assert env.feeder == "https://new.localdomain/feeder"
+        assert env.server == "https://new.localdomain/server"
+        assert env.timeout == 9
+
+    @staticmethod
+    def test_deprecated_node_keywords_fallback():
+        write_node_conf("collector_timeout = 7s\n"
+                        "\n[collector]\nurl = https://new.localdomain\n")
+        env = Node().collector_env
+        assert env.collector == "https://new.localdomain"
+        assert env.feeder == "https://new.localdomain/feeder"
+        assert env.timeout == 7
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
 class TestCollectorOk:
     @staticmethod
     @pytest.mark.parametrize("conf, expected", [
