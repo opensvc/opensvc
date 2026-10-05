@@ -265,7 +265,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             scheduler_actions={
                 "checks": [SchedOpts(
                     "checks",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "dequeue_actions": [SchedOpts(
                     "dequeue_actions",
@@ -274,7 +274,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 )],
                 "pushstats": [SchedOpts(
                     "stats",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "collect_stats": [SchedOpts(
                     "stats_collection",
@@ -286,7 +286,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 )],
                 "pushpatch": [SchedOpts(
                     "patches",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushasset": [SchedOpts(
                     "asset",
@@ -295,91 +295,91 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                 "pushnsr": [SchedOpts(
                     "nsr",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushhp3par": [SchedOpts(
                     "hp3par",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushemcvnx": [SchedOpts(
                     "emcvnx",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushcentera": [SchedOpts(
                     "centera",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushnetapp": [SchedOpts(
                     "netapp",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushibmds": [SchedOpts(
                     "ibmds",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushfreenas": [SchedOpts(
                     "freenas",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushxtremio": [SchedOpts(
                     "xtremio",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushpure": [SchedOpts(
                     "pure",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushgcedisks": [SchedOpts(
                     "gcedisks",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushhcs": [SchedOpts(
                     "hcs",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushhds": [SchedOpts(
                     "hds",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushnecism": [SchedOpts(
                     "necism",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pusheva": [SchedOpts(
                     "eva",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushibmsvc": [SchedOpts(
                     "ibmsvc",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushvioserver": [SchedOpts(
                     "vioserver",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushsym": [SchedOpts(
                     "sym",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushbrocade": [SchedOpts(
                     "brocade", schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "pushdisks": [SchedOpts(
                     "disks",
@@ -393,13 +393,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
                     "compliance",
                     fname="last_comp_check",
                     schedule_option="comp_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "rotate_root_pw": [SchedOpts(
                     "rotate_root_pw",
                     fname="last_rotate_root_pw",
                     schedule_option="no_schedule",
-                    req_collector=True,
+                    req_collector="oc2",
                 )],
                 "auto_reboot": [SchedOpts(
                     "reboot",
@@ -589,10 +589,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
     def collector_env(self):
         """
         Return the collector connection elements parsed from the node config
-        node.uuid, node.dbopensvc and node.dbcompliance as a Storage().
+        node.uuid, node.dbopensvc, node.dbcompliance (oc2) and
+        collector.url, collector.server, collector.feeder, collector.timeout (oc3)
+        as a Storage().
         """
         data = Storage()
         url = self.oget("node", "dbopensvc")
+        url_oc2 = url
         if url:
             try:
                 (
@@ -653,13 +656,13 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.uuid = ""
 
-        collector = self.oget("node", "collector")
+        collector = self.collector_oget("url", "collector")
         if collector:
             data.collector = collector
         else:
             data.collector = ""
 
-        collector_server = self.oget("node", "collector_server")
+        collector_server = self.collector_oget("server", "collector_server")
         if collector_server:
             data.server = collector_server
         elif collector:
@@ -667,7 +670,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.server = ""
 
-        collector_feeder = self.oget("node", "collector_feeder")
+        collector_feeder = self.collector_oget("feeder", "collector_feeder")
         if collector_feeder:
             data.feeder = collector_feeder
         elif collector:
@@ -675,12 +678,49 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         else:
             data.feeder = ""
 
-        collector_timeout = self.oget("node", "collector_timeout")
+        collector_timeout = self.collector_oget("timeout", "collector_timeout")
         if collector_timeout > 20:
             collector_timeout = 20
         data.timeout = collector_timeout
 
+        # oc2 (node.dbopensvc) and oc3 (collector.*) are independent
+        # endpoints. 'dbopensvc = none' explicitly disables oc2.
+        data.has_oc2 = bool(data.dbopensvc) and \
+            str(url_oc2).lower() != "none" and \
+            data.dbopensvc_host != "none"
+        data.has_oc3 = bool(data.feeder)
+        data.enabled = data.has_oc2 or data.has_oc3
+
         return data
+
+    def collector_oget(self, option, deprecated_option):
+        """
+        Return the collector.<option> value when set, else the value of the
+        deprecated node.<deprecated_option> it replaces, or its default.
+        """
+        try:
+            return self.conf_get("collector", option)
+        except ex.OptNotFound:
+            return self.oget("node", deprecated_option)
+
+    def collector_ok(self, req_collector):
+        """
+        Return True if the collector requirement of a scheduler task is
+        satisfied by the node configuration.
+
+        req_collector:
+          False: no requirement
+          "oc2": needs node.dbopensvc
+          "oc3": needs collector.url or collector.feeder
+          True:  needs any of the above
+        """
+        if not req_collector:
+            return True
+        if req_collector == "oc2":
+            return self.collector_env.has_oc2
+        if req_collector == "oc3":
+            return self.collector_env.has_oc3
+        return self.collector_env.enabled
 
     def call(self, *args, **kwargs):
         """
@@ -3062,6 +3102,8 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         ufile.close()
 
     def collector_url(self, rpath):
+        if not self.collector_env.dbopensvc:
+            raise ex.Error("node.dbopensvc is not set in node.conf")
         return self.collector_env.dbopensvc.replace("/feed/default/call/xmlrpc", rpath)
 
     def collector_basic_node(self):
@@ -3084,7 +3126,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
 
         it will raise if it can't decode the http response, or if it can't get http status code
 
-        When timeout is None, the request will use timeout value from the node configuration kw: node.collector_timeout.
+        When timeout is None, the request will use timeout value from the node configuration kw: collector.timeout.
         When timeout is 0, the request will wait forever.
 
         Returns:

@@ -1017,7 +1017,7 @@ class BaseSvc(Crypt, ExtConfigMixin):
         def is_logged_action():
             if self.options.cron and not self.node.oget("node", "dblogcron"):
                 return False
-            if self.node.oget("node", "dblog") and (self.node.collector_env.dbopensvc or self.node.collector_env.feeder) and self.node.collector_env.uuid:
+            if self.node.oget("node", "dblog") and self.node.collector_env.enabled and self.node.collector_env.uuid:
                 return True
             return False
 
@@ -3572,7 +3572,7 @@ class Svc(PgMixin, BaseSvc):
                 "DEFAULT",
                 fname="last_comp_check",
                 schedule_option="comp_schedule",
-                req_collector=True,
+                req_collector="oc2",
             )],
             "push_resinfo": [SchedOpts(
                 "DEFAULT",

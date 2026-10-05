@@ -27,6 +27,7 @@ BASE_SECTIONS = [
     "disks",
     "rotate_root_pw",
     "listener",
+    "collector",
     "syslog",
     "sysreport",
     "stats_collection",
