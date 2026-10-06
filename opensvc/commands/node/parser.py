@@ -407,6 +407,9 @@ ACTIONS = {
             "msg": "Display the node capabilities scanned and cached by the "
                    "agent.",
         },
+        "enter": {
+            "msg": "Enter local node, executing shell"
+        },
         "shutdown": {
             "msg": "Shutdown the node to powered off state.",
         },
