@@ -15,6 +15,7 @@ FEED_INSTANCE_ACTION = "/api/instance/action"
 FEED_INSTANCE_RESINFO = "/api/instance/resource_info"
 FEED_INSTANCE_STATUS = "/api/instance/status"
 
+FEED_NODE_CHECKS = "/api/node/checks"
 FEED_NODE_DISK = "/api/node/disk"
 FEED_NODE_SYSREPORT = "/api/node/sysreport"
 FEED_NODE_SYSTEM = "/api/node/system"

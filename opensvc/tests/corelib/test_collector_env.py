@@ -216,3 +216,60 @@ class TestSysreportOc3Only:
         assert sr.sysreport() == 1
         collect.assert_not_called()
         assert "no collector connexion" in capsys.readouterr().out
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures("osvc_path_tests")
+class TestPushChecks:
+    data = {
+        "fs_u": [
+            {"instance": "/var", "value": "94%", "path": "", "driver": "generic"},
+            {"instance": "/srv", "value": "12 %", "path": "svc1", "driver": "generic"},
+        ],
+        "mpath": [
+            {"instance": "36000c29a", "value": 2, "path": "", "driver": "generic"},
+            {"instance": "36000c29b", "value": "n/a", "path": "", "driver": "generic"},
+        ],
+    }
+
+    @staticmethod
+    def test_oc3_checks_data():
+        write_node_conf("collector = https://oc3.localdomain\nuuid = abcd\n")
+        l = Node().oc3_checks_data(TestPushChecks.data)
+        assert sorted(l, key=lambda d: d["instance"]) == [
+            {"type": "fs_u", "driver": "generic", "path": "svc1", "instance": "/srv", "unit": "%", "value": 12},
+            {"type": "fs_u", "driver": "generic", "path": "", "instance": "/var", "unit": "%", "value": 94},
+            {"type": "mpath", "driver": "generic", "path": "", "instance": "36000c29a", "unit": "", "value": 2},
+        ]
+
+    @staticmethod
+    def test_push_to_oc3_feed(mocker):
+        import core.oc3path as oc3path
+        from utilities.semver import Semver
+        write_node_conf("collector = https://oc3.localdomain\nuuid = abcd\n")
+        node = Node()
+        mocker.patch.object(Node, "oc3_version", return_value=Semver(3, 0, 6))
+        rpc_call = mocker.patch.object(node.collector, "call")
+        feed = mocker.patch.object(node, "oc3_request_feed", return_value=(202, None))
+
+        node.push_checks(TestPushChecks.data)
+
+        rpc_call.assert_not_called()
+        feed.assert_called_once()
+        args, kwargs = feed.call_args
+        assert args == ("POST", oc3path.FEED_NODE_CHECKS)
+        assert len(kwargs["data"]["data"]) == 3
+
+    @staticmethod
+    def test_push_falls_back_to_rpc_before_oc3_3_0_6(mocker):
+        from utilities.semver import Semver
+        write_node_conf("collector = https://oc3.localdomain\nuuid = abcd\n")
+        node = Node()
+        mocker.patch.object(Node, "oc3_version", return_value=Semver(3, 0, 5))
+        rpc_call = mocker.patch.object(node.collector, "call")
+        feed = mocker.patch.object(node, "oc3_request_feed")
+
+        node.push_checks(TestPushChecks.data)
+
+        feed.assert_not_called()
+        rpc_call.assert_called_once_with("push_checks", TestPushChecks.data)
