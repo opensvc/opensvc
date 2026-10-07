@@ -223,12 +223,24 @@ class Collector(shared.OsvcThread):
         if shared.NODE.collector_env.uuid == "":
             # don't even queue
             pass
-        elif shared.NODE.collector.disabled():
-            self.queue_limit()
         else:
-            self.run_collector()
-            self.unqueue_xmlrpc()
-            self.oc3_replay()
+            if shared.NODE.collector_env.has_oc2:
+                if shared.NODE.collector.disabled():
+                    self.queue_limit()
+                else:
+                    self.run_collector()
+                    self.unqueue_xmlrpc()
+                    self.oc3_replay()
+            elif shared.NODE.collector_env.has_oc3:
+                # no oc2 to unqueue the xmlrpc calls to, keep the queue bounded
+                self.queue_limit()
+                if self.oc3_version >= Semver(1, 0, 4):
+                    self.run_collector()
+                    self.oc3_replay()
+                else:
+                    # without oc2, the daemon status and ping need the oc3
+                    # feeder api. retry the version detection on next loop.
+                    unset_lazy(self, "oc3_version")
         if not self.stopped():
             with shared.COLLECTOR_TICKER:
                 shared.COLLECTOR_TICKER.wait(self.db_update_interval)
@@ -260,6 +272,9 @@ class Collector(shared.OsvcThread):
 
     def send_containerinfo(self, path):
         if self.stopped():
+            return
+        if not shared.NODE.collector_env.has_oc2:
+            # push_containerinfo has no oc3 implementation
             return
 
         with shared.SERVICES_LOCK:
@@ -294,6 +309,9 @@ class Collector(shared.OsvcThread):
                 except Exception as err:
                     self.log.info("skip send service %s config: %s",path, str(err))
                     return
+        elif not shared.NODE.collector_env.has_oc2:
+            # no collector to push the config to, don't mark it sent
+            return
         else:
             with shared.SERVICES_LOCK:
                 if path not in shared.SERVICES:
@@ -320,7 +338,8 @@ class Collector(shared.OsvcThread):
                 sent = True
         except Exception as exc:
             self.log.error("call push_config %s: %s", path, exc)
-            shared.NODE.collector.disable()
+            if self.oc3_version < Semver(1, 0, 3):
+                shared.NODE.collector.disable()
             sent = False
 
         if sent:
@@ -362,7 +381,8 @@ class Collector(shared.OsvcThread):
                 shared.NODE.collector.call("push_daemon_status", data, list(self.last_status_changed))
         except Exception as exc:
             self.log.error("call push_daemon_status: %s", exc)
-            shared.NODE.collector.disable()
+            if self.oc3_version < Semver(1, 0, 4):
+                shared.NODE.collector.disable()
         self.last_comm = time.time()
 
     def ping(self, data):
@@ -404,7 +424,8 @@ class Collector(shared.OsvcThread):
                     self.send_daemon_status(data)
         except Exception as exc:
             self.log.error("call daemon_ping: %s", exc)
-            shared.NODE.collector.disable()
+            if self.oc3_version < Semver(1, 0, 4):
+                shared.NODE.collector.disable()
         self.last_comm = time.time()
 
     def get_data(self):

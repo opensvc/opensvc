@@ -1924,7 +1924,56 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             drvs.print_checks(data)
         else:
             self.print_data(data)
-        self.collector.call('push_checks', data)
+        self.push_checks(data)
+
+    def push_checks(self, data):
+        """
+        Send the checks results to the collector, which replaces the checks
+        of the node with them: through the oc3 feeder api when the collector
+        serves it, else through the collector rpc.
+        """
+        try:
+            if self.oc3_version() >= Semver(3, 0, 6):
+                api_verb = "POST"
+                api_path = oc3path.FEED_NODE_CHECKS
+                body = {"data": self.oc3_checks_data(data)}
+                status_code, resp = self.oc3_request_feed(api_verb, api_path, data=body)
+                self.oc3_assert_status_code(api_verb, api_path, status_code, resp, expected=[202])
+            else:
+                self.collector.call('push_checks', data)
+        except Exception as exc:
+            raise ex.Error(str(exc))
+
+    def oc3_checks_data(self, data):
+        """
+        Return the checks results as the oc3 node checks feed expects them:
+        one entry per check instance, with an integer value. A "%" value
+        suffix, like the fs_u one, becomes the unit, and an instance whose
+        value is not a number is not sent.
+        """
+        l = []
+        for chk_type, instances in data.items():
+            for instance in instances:
+                value = str(instance["value"]).strip()
+                unit = ""
+                if value.endswith("%"):
+                    value = value[:-1].strip()
+                    unit = "%"
+                try:
+                    value = int(float(value))
+                except ValueError:
+                    self.log.warning("check %s %s: skip the value %s, not a number",
+                                     chk_type, instance["instance"], instance["value"])
+                    continue
+                l.append({
+                    "type": chk_type,
+                    "driver": instance["driver"],
+                    "path": instance["path"],
+                    "instance": str(instance["instance"]),
+                    "unit": unit,
+                    "value": value,
+                })
+        return l
 
     def checks_drivers(self, checkers=None):
         import drivers.check
