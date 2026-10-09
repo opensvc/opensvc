@@ -74,6 +74,11 @@ def driver_capabilities(node=None):
 
 
 class ContainerKvm(BaseContainer):
+    # The mode qga_cp() sets on the files it copies into the guest. They are
+    # staged there for the encap agent, which reads them as root, so nobody
+    # else in the guest has any business with them.
+    qga_cp_mode = "600"
+
     def __init__(self,
                  snap=None,
                  snapof=None,
@@ -183,26 +188,25 @@ class ContainerKvm(BaseContainer):
             cmd = Env.rcp.split() + [src, self.name+':'+dst]
             return justcall(cmd)
 
-    def qga_cp(self, src, dst):
-        self.log.debug("qga cp: %s to %s", src, dst)
-        payload = {
-            "execute":"guest-file-open",
-            "arguments":{
-                "path": dst,
-                "mode":"w"
-            }
-        }
+    def qga_agent_command(self, payload):
         cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
         out, err, ret = justcall(cmd)
         self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
         if ret != 0:
             raise ex.Error(err)
-        data = json.loads(out)
-        handle = data["return"]
+        return json.loads(out)
 
-        with open(src, "rb") as f:
-            buff = base64.b64encode(f.read()).decode()
+    def qga_file_open(self, path, mode):
+        payload = {
+            "execute":"guest-file-open",
+            "arguments":{
+                "path": path,
+                "mode": mode
+            }
+        }
+        return self.qga_agent_command(payload)["return"]
 
+    def qga_file_write(self, handle, buff):
         payload = {
             "execute":"guest-file-write",
             "arguments":{
@@ -210,24 +214,48 @@ class ContainerKvm(BaseContainer):
                 "buf-b64": buff,
             }
         }
-        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
-        out, err, ret = justcall(cmd)
-        self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
-        if ret != 0:
-            raise ex.Error(err)
-        data = json.loads(out)
+        self.qga_agent_command(payload)
 
+    def qga_file_close(self, handle):
         payload = {
             "execute":"guest-file-close",
             "arguments":{
                 "handle": handle,
             }
         }
-        cmd = ["virsh", "qemu-agent-command", self.name, json.dumps(payload)]
-        out, err, ret = justcall(cmd)
-        self.log.debug("%s => out:%s err:%s ret:%d", payload, out, err, ret)
-        if ret != 0:
-            raise ex.Error(err)
+        self.qga_agent_command(payload)
+
+    def qga_chmod(self, path, mode):
+        data = self.qga_exec(["/bin/chmod", mode, path])
+        if not data or data.get("exitcode") != 0:
+            self.log.warning("qga cp: could not set mode %s on %s: the file "
+                             "stays world-writable, as the guest agent "
+                             "created it", mode, path)
+
+    def qga_cp(self, src, dst):
+        """
+        Copy <src> to <dst> in the guest, through the qemu guest agent.
+
+        The guest agent creates the files it opens world-writable: its
+        guest-file-open takes no mode, and the agent chmods every file it
+        creates to 0666, its own umask included. What lands in the guest here
+        is read back by the encap agent as root, so the destination is locked
+        down before anything is written into it: the file is created empty,
+        chmoded, then written, and reopening a file that already exists
+        leaves its mode alone.
+        """
+        self.log.debug("qga cp: %s to %s", src, dst)
+        self.qga_file_close(self.qga_file_open(dst, "w"))
+        self.qga_chmod(dst, self.qga_cp_mode)
+
+        with open(src, "rb") as f:
+            buff = base64.b64encode(f.read()).decode()
+
+        handle = self.qga_file_open(dst, "w")
+        try:
+            self.qga_file_write(handle, buff)
+        finally:
+            self.qga_file_close(handle)
         return "", "", 0
 
     def qga_exec(self, cmd, verbose=False, timeout=60):
