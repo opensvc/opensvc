@@ -143,3 +143,30 @@ class TestNode:
         fpath = node.make_temp_config()
         assert fpath
         os.unlink(fpath)
+
+
+@pytest.mark.ci
+@pytest.mark.usefixtures('osvc_path_tests')
+class TestNodeAllowsEnv:
+    @staticmethod
+    @pytest.mark.parametrize('node_env, allow_envs, env, expected', [
+        ('PRD', None, 'PRD', True),
+        ('PRD', None, 'PPRD', False),
+        ('PRD', None, 'TST', False),
+        ('DRP', None, 'PRD', True),
+        ('DEV', None, 'TST', True),
+        ('PRD', 'PRD PPRD', 'PPRD', True),
+        ('PRD', 'PRD PPRD', 'PRD', True),
+        ('PRD', 'PRD PPRD', 'TST', False),
+        ('DEV', 'DEV', 'TST', False),
+    ])
+    def test_a_node_allows_the_envs_it_names_or_else_its_env_decides(node_env, allow_envs, env, expected):
+        """
+        A node naming no env allows every env but on a PRD node, which allows
+        the PRD services only. A node naming envs allows those alone.
+        """
+        keywords = ['node.env=%s' % node_env]
+        if allow_envs:
+            keywords.append('node.allow_envs=%s' % allow_envs)
+        Node().set_multi(keywords, validation=False)
+        assert Node().allows_env(env) is expected

@@ -50,7 +50,7 @@ PRIVATE_KEYWORDS = [
         "inheritance": "head",
         "default_text": "<same as node env>",
         "candidates": Env.allowed_svc_envs,
-        "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
+        "text": "A non-PRD service can not be brought up on a PRD node, unless the node allow_envs keyword allows its env, but a PRD service can be startup on a non-PRD node (in a DRP situation). The default value is the node env."
     },
     {
         "section": "DEFAULT",
