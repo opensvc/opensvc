@@ -318,7 +318,14 @@ KEYWORDS = [
         "keyword": "env",
         "default": "TST",
         "candidates": Env.allowed_svc_envs,
-        "text": "A non-PRD service can not be brought up on a PRD node, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+        "text": "A non-PRD service can not be brought up on a PRD node, unless the node :kw:`allow_envs` allows its env, but a PRD service can be startup on a non-PRD node (in a DRP situation)."
+    },
+    {
+        "section": "node",
+        "keyword": "allow_envs",
+        "convert": "list",
+        "example": "PRD PPRD",
+        "text": "The envs of the services allowed to run on this node. When unset, the node :kw:`env` decides: a PRD node runs the PRD services only, and a non-PRD node runs the services of every env. When set, the node runs the services of these envs only, whatever its own env. For example, on a PRD cluster, ``PRD PPRD`` also allows the PPRD services to run."
     },
     {
         "section": "node",

@@ -1989,7 +1989,9 @@ class BaseSvc(Crypt, ExtConfigMixin):
             return
         if action in ACTIONS_ALLOW_ON_INVALID_NODE:
             return
-        if self.svc_env != 'PRD' and self.node.env == 'PRD':
+        if not self.node.allows_env(self.svc_env):
+            if self.node.allow_envs:
+                raise ex.Error('not allowed to run on this node (svc env=%s node allow_envs=%s)' % (self.svc_env, " ".join(self.node.allow_envs)))
             raise ex.Error('not allowed to run on this node (svc env=%s node env=%s)' % (self.svc_env, self.node.env))
         if Env.nodename in self.nodes:
             return

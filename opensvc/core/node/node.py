@@ -461,6 +461,26 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
         except ex.OptNotFound as exc:
             return exc.default
 
+    @lazy
+    def allow_envs(self):
+        try:
+            return self.conf_get("node", "allow_envs")
+        except ex.OptNotFound as exc:
+            return exc.default
+
+    def allows_env(self, env):
+        """
+        Return True if a service of the <env> env is allowed to run on this
+        node.
+
+        A node allowing no env allows every env but on a PRD node, which
+        allows the PRD services only. A node allowing envs allows those
+        alone.
+        """
+        if self.allow_envs:
+            return env in self.allow_envs
+        return env == "PRD" or self.env != "PRD"
+
     def get_min_avail(self, keyword, metric, limit=100):
         total = self.stats().get(metric)  # mb
         if total in (0, None):
