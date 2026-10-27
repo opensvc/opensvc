@@ -85,6 +85,7 @@ ACTION_ANY_NODE = (
     "set",
     "unset",
     "wait",
+    "enter",
 )
 ACTION_ASYNC = {
     "freeze": {
@@ -1794,6 +1795,16 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             }
 
         return data
+
+    def enter(self):
+        """
+        Provide local shell
+        """
+        import shutil
+        for cmd in ["bash", "zsh", "ksh", "sh", "powershell", "cmd"]:
+            if shutil.which(cmd):
+                os.execvp(cmd, [cmd])
+        raise ex.Error("cannot find shell command for your OS")
 
     def shutdown(self):
         """
