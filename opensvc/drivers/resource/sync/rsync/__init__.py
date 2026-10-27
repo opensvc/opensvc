@@ -213,6 +213,7 @@ class SyncRsync(Sync):
             _dst = ', '.join(sorted(target))
             self.label = "rsync %s to %s"%(_src, _dst)
         self.src = src
+        self.resources_files = None
         self.dst = dst
         self.dstfs = dstfs
         self.snap = snap
@@ -356,21 +357,24 @@ class SyncRsync(Sync):
         else:
             src = self.src
 
-        if len(src) == 0:
+        if len(src) == 0 and not self.resources_files:
             raise ex.syncNoFilesToSync
 
         for node in targets:
+            node_src = src + self.node_resources_files(node)
+            if len(node_src) == 0:
+                continue
             ruser = self.svc.node.get_ruser(node)
             dst = ruser + '@' + node + ':' + self.dst
             options = self.mangle_options(ruser)
-            cmd = ['rsync'] + options + src
+            cmd = ['rsync'] + options + node_src
             cmd.append(dst)
             if self.rid.startswith("sync#i"):
                 ret, out, err = self.call(cmd)
             else:
                 ret, out, err = self.vcall(cmd)
             if ret != 0:
-                self.log.error("node %s synchronization failed (%s => %s)" % (node, src, dst))
+                self.log.error("node %s synchronization failed (%s => %s)" % (node, node_src, dst))
                 continue
             self.sync_timestamp(node)
             stats = self.parse_rsync(out)
@@ -566,8 +570,24 @@ class SyncRsync(Sync):
     def add_resource_files_to_sync(self):
         if self.rid != "sync#i0":
             return
+        if self.resources_files is not None:
+            return
+        self.resources_files = []
         for r in self.svc.get_resources():
-            self.src += r.files_to_sync()
+            files = r.files_to_sync()
+            if files:
+                self.resources_files.append((r, files))
+
+    def node_resources_files(self, nodename):
+        """
+        Return the files the resources contribute to sync#i0 that are
+        relevant on <nodename>.
+        """
+        files = []
+        for r, _files in self.resources_files or []:
+            if r.is_sync_peer(nodename):
+                files += _files
+        return files
 
     def resources_presync(self):
         if self.rid != "sync#i0":
@@ -587,7 +607,7 @@ class SyncRsync(Sync):
     def _info(self):
         self.add_resource_files_to_sync()
         data = [
-          ["src", " ".join(self.src)],
+          ["src", " ".join(self.src + [f for _, files in self.resources_files or [] for f in files])],
           ["dst", self.dst],
           ["dstfs", self.dstfs if self.dstfs else ""],
           ["bwlimit", self.bwlimit if self.bwlimit else ""],
