@@ -966,6 +966,13 @@ class Resource(object):
         """
         return self.default_files_to_sync()
 
+    def is_sync_peer(self, nodename):
+        """
+        Return True if the files_to_sync() of this resource are relevant on
+        <nodename>, so sync#i0 sends them there.
+        """
+        return True
+
     def rollback(self):
         """
         Executes a resource stop if the resource start has marked the resource

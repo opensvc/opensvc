@@ -158,6 +158,17 @@ class BaseContainer(Resource):
     def name(self):
         return self.raw_name or self.svc.name
 
+    def is_sync_peer(self, nodename):
+        """
+        Return True if <nodename> runs a container of the same name, so the
+        files describing the local container are relevant there. A name
+        scoped per node, like name@n1=vm1 and name@n2=vm2, makes n1 and n2
+        run different containers, and the vm1 configuration must not land
+        on n2.
+        """
+        name = self.oget("name", impersonate=nodename) or self.svc.name
+        return name == self.name
+
     @lazy
     def label(self):  # pylint: disable=method-hidden
         return self.name
