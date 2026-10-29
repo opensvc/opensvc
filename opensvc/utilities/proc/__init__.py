@@ -72,11 +72,17 @@ def fork_context():
     calls this runs there: the parallel resource set actions are serialized on
     windows, and the other callers hand a child a nested function, which no
     pickle-based start method has ever been able to carry.
+
+    Pythons older than 3.4 have no start method choice and always fork on
+    unix: the multiprocessing module itself serves as the context.
     """
+    get_context = getattr(multiprocessing, "get_context", None)
+    if get_context is None:
+        return multiprocessing
     try:
-        return multiprocessing.get_context("fork")
+        return get_context("fork")
     except ValueError:
-        return multiprocessing.get_context()
+        return get_context()
 
 
 def oom_score_adj(pid="self", value=0):
