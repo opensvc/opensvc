@@ -112,3 +112,54 @@ class TestSvcSurvivesPickling:
         clone = pickle.loads(pickle.dumps(svc))
         svc.load_driver("sync", "rsync")
         assert clone.kwstore["sync"].getkey("options", "rsync") is not None
+
+
+@pytest.mark.ci
+class TestSvcNeedSnapTrigger:
+    """
+    The DEFAULT.presnap_trigger and DEFAULT.postsnap_trigger run around the
+    pre_action of a sync action when one of its resources creates snapshots
+    there.
+    """
+
+    @staticmethod
+    def need_snap_trigger(osvc_path_tests, resources, action="sync_update", drpnode=False):
+        import os
+        from env import Env
+
+        os.mkdir(Env.paths.pathetc)
+        with open(os.path.join(Env.paths.pathetc, "svc.conf"), mode="w+") as svc_file:
+            svc_file.write("[DEFAULT]\nid = abcd\n" + resources)
+        svc = Svc(name="svc")
+        if drpnode:
+            # the nodes keyword does not resolve without a daemon
+            svc.nodes = set(["othernode"])
+            svc.drpnodes = set([Env.nodename])
+        return svc.need_snap_trigger(svc.get_resourcesets("sync"), action)
+
+    @staticmethod
+    @pytest.mark.parametrize("resources, expected", [
+        ("", False),
+        ("[sync#1]\ntype = rsync\nsrc = /a\ndst = /a\ntarget = nodes\n", False),
+        ("[sync#1]\ntype = rsync\nsrc = /a\ndst = /a\ntarget = nodes\nsnap = true\n", True),
+        ("[sync#1]\ntype = rsync\nsrc = /a\ndst = /a\ntarget = nodes\nsnap = true\ndisable = true\n", False),
+        ("[sync#1]\ntype = zfs\nsrc = p1/a\ndst = p2/a\ntarget = nodes\n", True),
+        ("[sync#1]\ntype = zfs\nsrc = p1/a\ndst = p2/a\ntarget = nodes\ntags = delay_snap\n", False),
+        ("[sync#1]\ntype = zfssnap\ndataset = p1/a\n", True),
+        ("[sync#1]\ntype = zfssnap\ndataset = p1/a\ndisable = true\n", False),
+    ], ids=[
+        "no-sync", "rsync", "rsync-snap", "rsync-snap-disabled",
+        "zfs", "zfs-delay-snap", "zfssnap", "zfssnap-disabled",
+    ])
+    def test_sync_update(osvc_path_tests, resources, expected):
+        assert TestSvcNeedSnapTrigger.need_snap_trigger(osvc_path_tests, resources) is expected
+
+    @staticmethod
+    def test_not_on_a_non_sync_action(osvc_path_tests):
+        resources = "[sync#1]\ntype = zfssnap\ndataset = p1/a\n"
+        assert TestSvcNeedSnapTrigger.need_snap_trigger(osvc_path_tests, resources, action="sync_full") is False
+
+    @staticmethod
+    def test_not_on_a_drpnode(osvc_path_tests):
+        resources = "[sync#1]\ntype = zfssnap\ndataset = p1/a\n"
+        assert TestSvcNeedSnapTrigger.need_snap_trigger(osvc_path_tests, resources, drpnode=True) is False

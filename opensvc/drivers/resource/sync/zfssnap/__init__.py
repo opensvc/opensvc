@@ -231,6 +231,9 @@ class SyncZfssnap(Sync):
     def sync_update(self):
         pass
 
+    def need_snap_trigger(self):
+        return True
+
     def pre_action(self, action):
         """
         Do the snaps in pre_action so the zfs send/recv can replicate them asap
