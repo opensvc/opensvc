@@ -2164,7 +2164,7 @@ class Node(Crypt, ExtConfigMixin, NetworksMixin):
             if basic_value:
                 headers["Authorization"] = "Basic %s" % basic_value
 
-        data = {"nodename": Env.nodename}
+        data = {"nodename": Env.nodename, "cluster_id": self.cluster_id}
         if self.options.app:
             data["app"] = self.options.app
 

@@ -59,7 +59,7 @@ KEYWORDS = [
         "default_text": "",
         "example": "delay_snap",
         "at": True,
-        "text": "The zfs sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the sync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
+        "text": "The zfs sync resource supports the :c-tag:`delay_snap` tag. This tag delays the snapshot creation until just before the sync of this resource, thus after :kw:`postsnap_trigger` execution, and a resource with this tag does not cause the snap triggers to run. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
     },
 ]
 
@@ -119,6 +119,9 @@ class SyncZfs(Sync):
         if self.src_pool == self.dst_pool and 'local' in self.target:
             self.log.error('zfs send/receive in same pool not allowed')
             raise ex.Error
+
+    def need_snap_trigger(self):
+        return "delay_snap" not in self.tags
 
     def pre_action(self, action):
         """Prepare dataset snapshots

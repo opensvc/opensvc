@@ -694,14 +694,14 @@ KEYWORDS = [
         "section": "DEFAULT",
         "keyword": "presnap_trigger",
         "convert": "shlex",
-        "text": "Define a command to run before creating snapshots. This is most likely what you need to use plug a script to put you data in a coherent state (alter begin backup and the like).",
+        "text": "Define a command to run before the snapshots of a sync action are created. Use it to put your data in a coherent state (alter begin backup and the like). The trigger runs on ``sync update``, ``sync nodes``, ``sync drp`` and ``sync resync``, on the :kw:`nodes` only, when at least one enabled resource of the action creates snapshots before the data copy: a ``sync.rsync`` with :kw:`snap` set to ``true``, a ``sync.zfs`` without the :c-tag:`delay_snap` tag, or a ``sync.zfssnap``.",
         "example": "/srv/svc1/etc/init.d/pre_snap.sh"
     },
     {
         "section": "DEFAULT",
         "keyword": "postsnap_trigger",
         "convert": "shlex",
-        "text": "Define a command to run after snapshots are created. This is most likely what you need to use plug a script to undo the actions of :kw:`presnap_trigger`.",
+        "text": "Define a command to run after the snapshots of a sync action are created, before the data copy. Use it to undo the actions of :kw:`presnap_trigger`. The trigger runs under the same conditions as :kw:`presnap_trigger`.",
         "example": "/srv/svc1/etc/init.d/post_snap.sh"
     },
     {

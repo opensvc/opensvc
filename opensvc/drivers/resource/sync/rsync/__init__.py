@@ -36,7 +36,7 @@ KEYWORDS = [
         "default_text": "",
         "example": "delay_snap",
         "at": True,
-        "text": "The sync resource supports the :c-tag:`delay_snap` tag. This tag is used to delay the snapshot creation just before the rsync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
+        "text": "The sync resource supports the :c-tag:`delay_snap` tag. With :kw:`snap` set to ``true``, this tag delays the snapshot creation until just before the rsync, thus after :kw:`postsnap_trigger` execution. The default behaviour (no tags) is to group all snapshots creation before copying data to remote nodes, thus between :kw:`presnap_trigger` and :kw:`postsnap_trigger`."
     },
     {
         "keyword": "options",
@@ -394,6 +394,9 @@ class SyncRsync(Sync):
             elif line.endswith("/sec"):
                 data["speed"] = int(convert_speed(line.split()[-2].replace(",","")+"/s"))
         return data
+
+    def need_snap_trigger(self):
+        return self.snap is True
 
     def pre_action(self, action):
         """Actions to do before resourceSet iterates through the resources to

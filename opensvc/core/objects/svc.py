@@ -3911,16 +3911,19 @@ class Svc(PgMixin, BaseSvc):
     def need_snap_trigger(self, rsets, action):
         """
         Return True if the action is a sync action and at least one of the
-        specified resource sets has a resource requiring a snapshot.
+        specified resource sets has a resource creating snapshots in its
+        pre_action.
         """
         if action not in ACTIONS_NEED_SNAP_TRIGGER:
             return False
+        # drpnodes only receive data
+        if Env.nodename not in self.nodes:
+            return False
         for rset in rsets:
             for resource in rset.resources:
-                # avoid to run pre/post snap triggers when there is no
-                # resource flagged for snap and on drpnodes
-                if hasattr(resource, "snap") and resource.snap is True and \
-                   Env.nodename in self.nodes:
+                if resource.skip or resource.is_disabled():
+                    continue
+                if resource.need_snap_trigger():
                     return True
         return False
 

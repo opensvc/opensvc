@@ -109,6 +109,14 @@ class Resource(object):
         """
         pass
 
+    def need_snap_trigger(self):
+        """
+        Return True if the resource creates snapshots in its resourceset
+        pre_action, so the DEFAULT.presnap_trigger and
+        DEFAULT.postsnap_trigger must run around it.
+        """
+        return False
+
     @lazy
     def is_standby(self):
         if self.standby is not None:
