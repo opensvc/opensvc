@@ -58,12 +58,28 @@ def eval_expr(expr):
     """ arithmetic expressions evaluator
     """
 
+    def literal(node):
+        """
+        Return a (True, value) tuple if node is a number or string literal,
+        (False, None) otherwise.
+
+        Python 3.8+ parses literals as ast.Constant, and Python 3.14 removed
+        the ast.Num and ast.Str aliases older Pythons parse literals as.
+        """
+        if sys.version_info >= (3, 8):
+            if isinstance(node, ast.Constant):
+                return True, node.value
+        elif isinstance(node, ast.Num):  # <number>
+            return True, node.n
+        elif isinstance(node, ast.Str):
+            return True, node.s
+        return False, None
+
     def eval_(node):
         _safe_names = {'None': None, 'True': True, 'False': False}
-        if isinstance(node, ast.Num):  # <number>
-            return node.n
-        elif isinstance(node, ast.Str):
-            return node.s
+        is_literal, value = literal(node)
+        if is_literal:
+            return value
         elif isinstance(node, ast.Name):
             if node.id in _safe_names:
                 return _safe_names[node.id]
