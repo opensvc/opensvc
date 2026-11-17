@@ -531,7 +531,8 @@ class Array(object):
         filters = []
         if qfilter is not None:
             filters += [qfilter]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/hosts", params=params)
 
     def list_hosts(self, qfilter=None, **kwargs):
@@ -543,7 +544,8 @@ class Array(object):
         filters = []
         if qfilter is not None:
             filters += [qfilter]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/host-groups", params)
 
     def list_hostgroups(self, qfilter=None, **kwargs):
@@ -555,7 +557,8 @@ class Array(object):
         filters = []
         if qfilter is not None:
             filters += [qfilter]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/connections", params)
 
     def list_connections(self, qfilter=None, **kwargs):
@@ -567,7 +570,8 @@ class Array(object):
         filters = []
         if qfilter is not None:
             filters += [qfilter]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/hardware", params)
 
     def list_hardware(self, qfilter=None, **kwargs):
@@ -579,7 +583,8 @@ class Array(object):
         filters = []
         if qfilter is not None:
             filters += [qfilter]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/arrays", params)
 
     def list_arrays(self, qfilter=None, **kwargs):
@@ -595,7 +600,8 @@ class Array(object):
             filters += ["id='%s'" % id]
         if name is not None:
             filters += ["name='%s'" % name]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/volume-groups", params)
 
     def list_volumegroups(self, qfilter=None, id=None, name=None, **kwargs):
@@ -609,7 +615,8 @@ class Array(object):
             filters += [qfilter]
         if name is not None:
             filters += ["name='%s'" % name]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/network-interfaces", params)
 
     def list_network_interfaces(self, qfilter=None, name=None, **kwargs):
@@ -625,7 +632,8 @@ class Array(object):
             filters += ["wwn='%s'" % wwn]
         if name is not None:
             filters += ["name='%s'" % name]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/ports", params)
 
     def list_ports(self, qfilter=None, wwn=None, name=None, **kwargs):
@@ -641,7 +649,8 @@ class Array(object):
             filters += ["id='%s'" % id]
         if name is not None:
             filters += ["name='%s'" % name]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/pods", params)
 
     def list_pods(self, qfilter=None, id=None, name=None, **kwargs):
@@ -661,7 +670,8 @@ class Array(object):
             filters += ["serial='%s'" % serial]
         if pod is not None:
             filters += ["pod.name='%s'" % pod]
-        params["filter"] = " and ".join(filters)
+        if filters:
+            params["filter"] = " and ".join(filters)
         return self.get_items("/volumes", params)
 
     def list_volumes(self, qfilter=None, id=None, name=None, serial=None, pod=None, **kwargs):
