@@ -14,7 +14,6 @@ def suicide(mocker):
 
 
 @pytest.fixture(scope='function')
-@pytest.mark.usefixtures('osvc_path_tests')
 def thr(osvc_path_tests, mocker):
     shared_thr = shared.OsvcThread()
     shared.NODE = Node()

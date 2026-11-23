@@ -6,7 +6,6 @@ from daemon.clusterlock import LockMixin
 
 
 @pytest.fixture(scope='function')
-@pytest.mark.usefixtures('osvc_path_tests')
 def thr(mocker, osvc_path_tests):
     mocker.patch.object(LockMixin, 'lock_acquire')
     shared_thr = shared.OsvcThread()

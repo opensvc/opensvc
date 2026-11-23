@@ -9,7 +9,6 @@ from utilities.lazy import unset_lazy
 
 
 @pytest.fixture(scope='function')
-@pytest.mark.usefixtures('osvc_path_tests')
 def thr(mocker, osvc_path_tests):
     shared_thr = shared.OsvcThread()
     shared_thr.log = mocker.MagicMock()
