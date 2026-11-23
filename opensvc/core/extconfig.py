@@ -69,9 +69,9 @@ def eval_expr(expr):
         if sys.version_info >= (3, 8):
             if isinstance(node, ast.Constant):
                 return True, node.value
-        elif isinstance(node, ast.Num):  # <number>
+        elif isinstance(node, ast.Num):  # pylint: disable=no-member
             return True, node.n
-        elif isinstance(node, ast.Str):
+        elif isinstance(node, ast.Str):  # pylint: disable=no-member
             return True, node.s
         return False, None
 

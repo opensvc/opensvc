@@ -180,7 +180,7 @@ class TestSchedule(object):
                               to_datetime(last_s))
 
     @staticmethod
-    @pytest.mark.parametrize('schedule_s,', [
+    @pytest.mark.parametrize('schedule_s', [
         "23:00-23:59@61 *:first:*",
         "23:00-23:59@61 *:",
         "23:00-23:59@61 *:*",

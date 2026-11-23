@@ -10,13 +10,19 @@ on:
       - b2.1
 jobs:
   ci-pytest:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - python-version: 3.8
+          # the oldest python we test, on the newest runner image providing it
+          - python-version: "3.8"
+            os: ubuntu-24.04
             PYTEST_EXTRA_ARGS: "--cov"
+          # the newest python, to catch the removals and deprecations early
+          - python-version: "3.14"
+            os: ubuntu-latest
+            PYTEST_EXTRA_ARGS: ""
 
     steps:
       - name: Checkout opensvc
@@ -48,20 +54,22 @@ jobs:
           coverage report
 
   ci-pylint:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - python-version: 3.8
-            PYTEST_EXTRA_ARGS: "--cov"
+          - python-version: "3.8"
+            os: ubuntu-24.04
+          - python-version: "3.14"
+            os: ubuntu-latest
 
     steps:
       - name: Checkout opensvc
         uses: actions/checkout@v2
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
