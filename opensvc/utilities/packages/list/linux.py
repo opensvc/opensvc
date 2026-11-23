@@ -1,5 +1,4 @@
 import os
-from collections import namedtuple
 from stat import *
 
 from env import Env
@@ -26,19 +25,25 @@ def listpkg_snap():
     cmd = ["snap", "list", "--unicode=never", "--color=never"]
     out, err, ret = justcall(cmd)
     lines = []
-    header = namedtuple("", "")
+    header = None
     for line in out.splitlines():
         if line.startswith('Name'):
-            header = namedtuple("header", line)
+            header = line.split()
             continue
-        _data = header._make(line.split())
-        lines.append([
-            Env.nodename,
-            _data.Name,
-            "%s rev %s" % (_data.Version, _data.Rev),
-            "",
-            "snap",
-        ])
+        if header is None:
+            # no header yet, ex: "No snaps are installed yet."
+            continue
+        _data = dict(zip(header, line.split()))
+        try:
+            lines.append([
+                Env.nodename,
+                _data["Name"],
+                "%s rev %s" % (_data["Version"], _data["Rev"]),
+                "",
+                "snap",
+            ])
+        except KeyError:
+            continue
     return lines
 
 
