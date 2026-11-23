@@ -114,18 +114,18 @@ class SyncZfssnap(Sync):
         snap += datetime.datetime.now().strftime(suffix)
         try:
             ds.snapshot(snapname=snap, recursive=self.recursive)
-            clear_cache("zfs.list.snapshots.name")
+            clear_cache("zfs.list.snapshots.name." + dataset)
         except Exception as e:
             raise ex.Error(str(e))
 
-    @cache("zfs.list.snapshots.name")
-    def list_snaps(self):
-        cmd = ["zfs", "list", "-r", "-H", "-t", "snapshot", "-o", "name"]
+    @cache("zfs.list.snapshots.name.{args[1]}")
+    def list_snaps(self, dataset):
+        cmd = ["zfs", "list", "-r", "-H", "-t", "snapshot", "-o", "name", dataset]
         out, err, ret = justcall(cmd)
         return out.splitlines()
 
     def remove_snap(self, dataset):
-        cursnaps = self.list_snaps()
+        cursnaps = self.list_snaps(dataset)
         snaps = {}
         for sv in cursnaps:
             s = sv.replace(dataset+"@", "")
@@ -153,13 +153,13 @@ class SyncZfssnap(Sync):
                 else:
                     options = []
                 ds.destroy(options=options)
-                clear_cache("zfs.list.snapshots.name")
+                clear_cache("zfs.list.snapshots.name." + dataset)
             except Exception as e:
                 raise ex.Error(str(e))
 
     def get_snaps(self, dataset):
         snaps = []
-        for sv in self.list_snaps():
+        for sv in self.list_snaps(dataset):
             s = sv.replace(dataset+"@", "")
             l = s.split('.')
             if len(l) < 2:
