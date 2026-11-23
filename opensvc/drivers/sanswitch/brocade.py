@@ -10,7 +10,7 @@ if Env.paths.pathbin not in os.environ['PATH']:
     os.environ['PATH'] += ":"+Env.paths.pathbin
 
 def brocadetelnetcmd(cmd, switch, username, password):
-    import telnetlib
+    import telnetlib  # pylint: disable=import-error
     tn = telnetlib.Telnet(switch)
     tn.read_until("login: ")
     tn.write(username + '\n')

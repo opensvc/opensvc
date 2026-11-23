@@ -6,7 +6,6 @@ from env import Env
 
 
 @pytest.fixture(scope='function')
-@pytest.mark.usefixtures('osvc_path_tests')
 def shared_data(mocker):
     """
     mock some of shared structures
